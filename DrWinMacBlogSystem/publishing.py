@@ -1,26 +1,40 @@
 """
 Blog Publishing Utilities
-Handles HTML generation, file management, and blog index updates.
+Handles HTML generation, file management, GitHub integration, and blog index updates.
 """
 
 import json
 import logging
+import os
+import base64
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
+import requests
 
 logger = logging.getLogger(__name__)
 
 
 class BlogPublisher:
-    """Manage blog post publishing and index page regeneration."""
+    """Manage blog post publishing with GitHub persistence."""
 
     def __init__(self, blog_path: Path):
-        self.blog_path     = Path(blog_path)
+        self.blog_path = Path(blog_path)
         self.blog_path.mkdir(parents=True, exist_ok=True)
         self.metadata_file = self.blog_path / 'metadata.json'
-        self.metadata      = self._load_metadata()
+        self.metadata = self._load_metadata()
+        
+        # GitHub config
+        self.github_token = os.getenv('GITHUB_TOKEN')
+        self.github_repo = os.getenv('GITHUB_REPO', 'drwinmac-wq/drwinmac-blog')
+        self.github_api = 'https://api.github.com'
+        self.blog_dir = 'blog'  # Directory in repo where blog posts live
+        
         logger.info(f"BlogPublisher ready — path: {self.blog_path.resolve()}")
+        if self.github_token:
+            logger.info(f"GitHub integration enabled — repo: {self.github_repo}")
+        else:
+            logger.warning("GITHUB_TOKEN not set — blog posts won't persist to GitHub")
 
     # ── Metadata helpers ─────────────────────────────────────────────────────
 
@@ -39,6 +53,54 @@ class BlogPublisher:
                 json.dump(self.metadata, f, indent=2, ensure_ascii=False)
         except Exception as e:
             logger.error(f"Failed to save metadata.json: {e}")
+
+    # ── GitHub Integration ───────────────────────────────────────────────────
+
+    def _github_commit(self, filepath: str, content: str, message: str) -> bool:
+        """Commit a file to GitHub via API."""
+        if not self.github_token:
+            logger.warning("GitHub token not configured — skipping GitHub commit")
+            return False
+        
+        try:
+            url = f"{self.github_api}/repos/{self.github_repo}/contents/{filepath}"
+            headers = {
+                'Authorization': f'token {self.github_token}',
+                'Accept': 'application/vnd.github.v3+json'
+            }
+            
+            # Get current file SHA if it exists (needed for updates)
+            sha = None
+            try:
+                resp = requests.get(url, headers=headers, timeout=10)
+                if resp.status_code == 200:
+                    sha = resp.json()['sha']
+            except:
+                pass  # File doesn't exist, that's fine
+            
+            # Encode content as base64
+            encoded = base64.b64encode(content.encode('utf-8')).decode('utf-8')
+            
+            # Prepare commit data
+            data = {
+                'message': message,
+                'content': encoded,
+                'branch': 'main'
+            }
+            if sha:
+                data['sha'] = sha
+            
+            # Commit to GitHub
+            resp = requests.put(url, json=data, headers=headers, timeout=10)
+            if resp.status_code in [201, 200]:
+                logger.info(f"✓ Committed to GitHub: {filepath}")
+                return True
+            else:
+                logger.error(f"GitHub commit failed ({resp.status_code}): {resp.text}")
+                return False
+        except Exception as e:
+            logger.error(f"GitHub commit error: {e}")
+            return False
 
     # ── HTML Generation ──────────────────────────────────────────────────────
 
@@ -172,13 +234,18 @@ class BlogPublisher:
     # ── File I/O ─────────────────────────────────────────────────────────────
 
     def save_post(self, slug: str, html_content: str) -> str:
-        """Write post HTML to disk. Returns the filename."""
+        """Write post HTML to disk AND commit to GitHub. Returns the filename."""
         filename = f'{slug}.html'
         filepath = self.blog_path / filename
         try:
             with open(filepath, 'w', encoding='utf-8') as f:
                 f.write(html_content)
-            logger.info(f"Post saved: {filepath}")
+            logger.info(f"Post saved locally: {filepath}")
+            
+            # Also commit to GitHub for persistence
+            github_path = f'{self.blog_dir}/{filename}'
+            self._github_commit(github_path, html_content, f'Publish blog post: {slug}')
+            
             return filename
         except Exception as e:
             logger.error(f"Failed to save post: {e}")
