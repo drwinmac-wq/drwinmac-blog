@@ -13,6 +13,7 @@ Features:
 """
 
 import os
+import re
 import json
 import asyncio
 import logging
@@ -20,7 +21,6 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 from pathlib import Path
 from functools import wraps
-from typing import Dict, Optional
 
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
@@ -46,7 +46,6 @@ app = Flask(__name__, static_folder='admin', static_url_path='')
 app.config['JSON_SORT_KEYS'] = False
 
 # Configure CORS
-# Configure CORS
 env_origins = os.getenv('CORS_ORIGINS', '*')
 origins = [o for o in env_origins.split(',') if o]
 
@@ -70,8 +69,10 @@ ADMIN_PASSCODE = os.getenv('ADMIN_PASSCODE')
 if not ADMIN_PASSCODE:
     raise ValueError("ADMIN_PASSCODE environment variable required")
 
-RATE_LIMIT_REQUESTS = int(os.getenv('RATE_LIMIT_REQUESTS', '10'))
+RATE_LIMIT_REQUESTS = int(os.getenv('RATE_LIMIT_REQUESTS', '200'))
 RATE_LIMIT_WINDOW = int(os.getenv('RATE_LIMIT_WINDOW', '3600'))
+# Separate tighter limit for expensive AI calls (expand)
+RATE_LIMIT_EXPAND = int(os.getenv('RATE_LIMIT_EXPAND', '20'))
 
 BLOG_PATH = Path(os.getenv('BLOG_PATH', '../blog'))
 BLOG_PATH.mkdir(parents=True, exist_ok=True)
@@ -109,6 +110,7 @@ except Exception as e:
 # ─── AUTHENTICATION ──────────────────────────────────────────────────────
 
 rate_limit_store = defaultdict(list)
+rate_limit_expand_store = defaultdict(list)
 
 def verify_passcode(f):
     """Decorator to verify admin passcode and enforce rate limiting"""
@@ -145,39 +147,47 @@ def verify_passcode(f):
     
     return wrapper
 
+def verify_passcode_expand(f):
+    """Stricter rate-limit decorator for expensive AI expand calls"""
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        client_ip = request.remote_addr
+        now = datetime.now()
+        
+        # Auth check (reuse general store for auth failures)
+        auth_header = request.headers.get('Authorization', '').strip()
+        passcode = auth_header[7:] if auth_header.startswith('Bearer ') else auth_header
+        if not passcode or passcode != ADMIN_PASSCODE:
+            rate_limit_store[client_ip].append(now)
+            logger.warning(f"Invalid passcode attempt from {client_ip}")
+            return jsonify({'error': 'Unauthorized. Invalid passcode.'}), 401
+        
+        # Tight rate limit for expand
+        rate_limit_expand_store[client_ip] = [
+            t for t in rate_limit_expand_store[client_ip]
+            if now - t < timedelta(seconds=RATE_LIMIT_WINDOW)
+        ]
+        if len(rate_limit_expand_store[client_ip]) >= RATE_LIMIT_EXPAND:
+            logger.warning(f"Expand rate limit exceeded for {client_ip}")
+            return jsonify({'error': f'Expand rate limit reached ({RATE_LIMIT_EXPAND}/hr). Try again later.'}), 429
+        
+        rate_limit_expand_store[client_ip].append(now)
+        return f(*args, **kwargs)
+    
+    return wrapper
+
 # ─── ROUTES: ADMIN INTERFACE ─────────────────────────────────────────────
 
 @app.route('/')
-def index():
-    """Serve login page"""
-    return send_from_directory('admin', 'login.html')
-
 @app.route('/admin/')
 @app.route('/admin/index.html')
 def admin_index():
-    """Serve admin dashboard"""
+    """Serve the admin panel"""
     return send_from_directory('admin', 'blog_admin_2_0.html')
 
 @app.route('/admin/<path:filename>')
 def admin_static(filename):
     """Serve admin static files"""
-    return send_from_directory('admin', filename)
-
-
-# Legacy/ported-site compatibility routes
-# Some static copies of the site link to the admin folder under
-# `/DrWinMacBlogSystem/admin/...`. Add routes that mirror those
-# paths so the ported site links resolve without editing the static files.
-@app.route('/DrWinMacBlogSystem/admin/')
-@app.route('/DrWinMacBlogSystem/admin/index.html')
-def legacy_admin_index():
-    """Redirect or serve the main admin dashboard for legacy links"""
-    return send_from_directory('admin', 'admin-dashboard.html')
-
-
-@app.route('/DrWinMacBlogSystem/admin/<path:filename>')
-def legacy_admin_static(filename):
-    """Serve admin static files for legacy paths"""
     return send_from_directory('admin', filename)
 
 
@@ -188,8 +198,52 @@ def favicon():
 
 # ─── ROUTES: API ENDPOINTS ───────────────────────────────────────────────
 
-@app.route('/api/status', methods=['GET'])
+ALLOWED_IMAGE_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp'}
+IMAGE_UPLOAD_DIR = Path(os.getenv('IMAGE_UPLOAD_DIR', '../assets/blog'))
+
+@app.route('/api/upload-image', methods=['POST'])
 @verify_passcode
+def api_upload_image():
+    """Upload a blog post image, auto-renamed for SEO."""
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    f = request.files['file']
+    if not f.filename:
+        return jsonify({'error': 'Empty filename'}), 400
+
+    # Extension check (case-insensitive)
+    ext = f.filename.rsplit('.', 1)[-1].lower() if '.' in f.filename else ''
+    if ext not in ALLOWED_IMAGE_EXTENSIONS:
+        allowed = ', '.join(sorted(ALLOWED_IMAGE_EXTENSIONS))
+        return jsonify({'error': f'File type .{ext} not allowed. Use: {allowed}'}), 400
+
+    # SEO-friendly rename: use provided title slug or fall back to original stem
+    title_hint = (request.form.get('title') or '').strip()
+    if title_hint:
+        slug = re.sub(r'[^a-z0-9]+', '-', title_hint.lower()).strip('-')[:80]
+    else:
+        stem = f.filename.rsplit('.', 1)[0]
+        slug = re.sub(r'[^a-z0-9]+', '-', stem.lower()).strip('-')[:80]
+
+    safe_name = f'{slug}.{ext}'
+
+    upload_dir = IMAGE_UPLOAD_DIR
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    # Avoid overwriting: append -2, -3 ... if file already exists
+    dest = upload_dir / safe_name
+    counter = 2
+    while dest.exists():
+        safe_name = f'{slug}-{counter}.{ext}'
+        dest = upload_dir / safe_name
+        counter += 1
+
+    f.save(dest)
+    logger.info(f'✅ Image uploaded: {dest}')
+    return jsonify({'success': True, 'filename': safe_name})
+
+
+@app.route('/api/status', methods=['GET'])
 def api_status():
     """Health check endpoint"""
     return jsonify({
@@ -201,7 +255,7 @@ def api_status():
     })
 
 @app.route('/api/expand', methods=['POST'])
-@verify_passcode
+@verify_passcode_expand
 def api_expand():
     """
     Expand short post into full article
@@ -233,30 +287,28 @@ def api_expand():
         data = request.json or {}
         short_post = (data.get('short_post') or '').strip()
         mode = data.get('mode', 'smart')
-        
+        model = data.get('model', 'gpt-4o')
+
         if not short_post:
             return jsonify({'error': 'short_post is required'}), 400
 
         if mode not in ['smart', 'research', 'voice']:
             return jsonify({'error': 'mode must be smart, research, or voice'}), 400
-        logger.info(f"Starting expansion in {mode} mode")
+
+        allowed_models = {'gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo'}
+        if model not in allowed_models:
+            model = 'gpt-4o'
+        logger.info(f"Starting expansion in {mode} mode with model {model}")
         
         # Run async expansion
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         
         try:
-            expanded = loop.run_until_complete(engine.expand_post(short_post, mode))
+            expanded = loop.run_until_complete(engine.expand_post(short_post, mode, model))
             
             # Generate preview HTML (publisher may not be initialized in error cases)
             preview_html = publisher.generate_preview_html(expanded) if publisher else ""
-            
-            # Send email preview
-            email_sent = False
-            if email_service:
-                email_sent = loop.run_until_complete(
-                    email_service.send_preview(expanded)
-                )
             
             logger.info(f"✅ Expansion successful: {expanded['title']}")
             
@@ -270,7 +322,7 @@ def api_expand():
                 'teaser': expanded['teaser'],
                 'date': expanded['date'],
                 'preview_html': preview_html,
-                'email_sent': email_sent
+                'email_sent': False
             })
         
         finally:

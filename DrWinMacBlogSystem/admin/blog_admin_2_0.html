@@ -8,16 +8,24 @@
     <title>Dr.WinMac — Blog Admin 2.0</title>
     <script>
       // Configuration: Set API base URL
-      // Detect Live Server / local dev and route API calls to Flask dev server
-      const API_BASE_URL =
-        window.location.hostname === "localhost" ||
-        window.location.hostname === "127.0.0.1" ||
-        window.location.port === "5500"
-          ? "http://localhost:5000"
-          : window.location.protocol +
-            "//" +
-            window.location.hostname +
-            (window.location.port ? ":" + window.location.port : "");
+      // If served directly from Flask (port 5001) use relative URLs (same-origin, no CORS).
+      // If opened via Live Server (port 5500) or file://, point to Flask dev server.
+      const API_BASE_URL = (() => {
+        const port = window.location.port;
+        const host = window.location.hostname;
+        // Served by Flask itself — use relative path (avoids localhost vs 127.0.0.1 CORS)
+        if (port === "5001") return "";
+        // Live Server or direct file open — proxy to Flask
+        if (port === "5500" || host === "localhost" || host === "127.0.0.1")
+          return "http://127.0.0.1:5001";
+        // Production — same origin
+        return (
+          window.location.protocol +
+          "//" +
+          window.location.hostname +
+          (port ? ":" + port : "")
+        );
+      })();
 
       // Authentication state
       let adminPasscode = localStorage.getItem("drwinmac_admin_passcode");
@@ -172,11 +180,14 @@
 
       /* ── LAYOUT ── */
       .layout {
-        display: grid;
-        grid-template-columns: 300px 1fr 360px;
-        gap: 0;
-        min-height: 100vh;
+        display: block;
+        margin-left: 300px;
         padding-top: 58px;
+      }
+      /* Content area: fills space right of fixed sidebar */
+      #contentArea {
+        display: flex;
+        flex-direction: row;
       }
 
       /* ── SIDEBAR ── */
@@ -184,10 +195,13 @@
         background: var(--surface);
         border-right: 1px solid var(--border);
         padding: 28px 20px;
-        position: sticky;
+        position: fixed;
         top: 58px;
+        left: 0;
+        width: 300px;
         height: calc(100vh - 58px);
         overflow-y: auto;
+        z-index: 10;
       }
 
       .sidebar-label {
@@ -270,7 +284,7 @@
       /* ── MAIN FORM ── */
       .main {
         padding: 32px 36px;
-        overflow-y: auto;
+        flex: 1;
       }
 
       .page-title {
@@ -576,6 +590,8 @@
 
       /* ── PREVIEW PANEL ── */
       .preview-panel {
+        width: 360px;
+        flex-shrink: 0;
         background: var(--surface);
         border-left: 1px solid var(--border);
         position: sticky;
@@ -769,8 +785,12 @@
       }
 
       @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
       }
 
       /* ── MODAL CONTENT ── */
@@ -780,7 +800,8 @@
         border-radius: 16px;
         width: 90%;
         max-width: 600px;
-        max-height: 85vh;
+        max-height: 92vh;
+        height: 92vh;
         display: flex;
         flex-direction: column;
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
@@ -829,21 +850,30 @@
         flex: 1;
         padding: 24px;
         overflow-y: auto;
+        min-height: 0;
       }
 
       .modal-body.modal-split {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 24px;
+        overflow: hidden;
+        padding: 0;
       }
 
       .modal-left {
-        padding-right: 12px;
+        padding: 24px 12px 24px 24px;
+        overflow-y: auto;
+        min-height: 0;
       }
 
       .modal-right {
         border-left: 1px solid var(--border);
-        padding-left: 12px;
+        padding: 24px 24px 24px 12px;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
       }
 
       .modal-footer {
@@ -957,15 +987,17 @@
       }
 
       .preview-html {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 16px;
-        font-size: 13px;
-        line-height: 1.6;
-        color: var(--text);
-        max-height: 500px;
+        flex: 1;
         overflow-y: auto;
+        min-height: 0;
+        padding: 16px;
+        background: var(--surface);
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        font-family: var(--sans);
+        font-size: 14px;
+        line-height: 1.7;
+        color: var(--text);
       }
 
       .preview-html h2 {
@@ -980,16 +1012,14 @@
 
       /* ── PREVIOUS POSTS PANEL ── */
       .previous-posts-panel {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: var(--surface);
-        border-right: 1px solid var(--border);
+        position: static;
+        background: transparent;
+        border-right: none;
         padding: 20px;
         overflow-y: auto;
         z-index: 100;
+        display: none;
+        flex: 1;
       }
 
       .previous-posts-panel.active {
@@ -1063,8 +1093,45 @@
         text-align: center;
         padding: 20px;
       }
-    </style>
 
+      /* ── MANUAL MAIN (inline tab) ── */
+      .manual-main {
+        padding: 32px 36px;
+        display: none;
+        flex-direction: column;
+        flex: 1;
+      }
+      .manual-main.active {
+        display: flex;
+      }
+      .manual-section-editor {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 14px;
+        position: relative;
+      }
+      .manual-section-editor .section-num {
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      .post-item-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .previous-posts-panel.active {
+        display: flex !important;
+        flex-direction: column;
+        padding: 32px 36px;
+        overflow-y: auto;
+      }
+    </style>
   </head>
   <body>
     <!-- LOGIN MODAL -->
@@ -1196,7 +1263,7 @@
           <div class="brand-dot"></div>
           <span>Dr.WinMac</span>
         </div>
-        <div class="badge">OPENAI POWERED</div>
+        <div class="badge">AI BLOGGER</div>
         <div
           style="
             display: flex;
@@ -1235,7 +1302,11 @@
             AI Expansion
           </div>
 
-          <div class="nav-item" onclick="openManualEditorModal()">
+          <div
+            class="nav-item"
+            id="manualEditorTab"
+            onclick="switchTab('manual')"
+          >
             <svg
               class="nav-icon"
               fill="none"
@@ -1252,7 +1323,11 @@
             Manual Editor
           </div>
 
-          <div class="nav-item" onclick="switchTab('previousPosts')" id="previousPostsTab">
+          <div
+            class="nav-item"
+            onclick="switchTab('previousPosts')"
+            id="previousPostsTab"
+          >
             <svg
               class="nav-icon"
               fill="none"
@@ -1281,48 +1356,6 @@
             <div class="stat-sub">expansion method</div>
           </div>
 
-          <div class="stat-block">
-            <div class="stat-label">Email</div>
-            <div
-              class="stat-value"
-              style="font-size: 11px; font-family: var(--mono)"
-            >
-              <a
-                href="http://localhost:5000/cdn-cgi/l/email-protection"
-                class="__cf_email__"
-                data-cfemail="cfa5aabdaaa2b68fabbdb8a6a1a2aeace1bbaaaca7"
-                >[email&nbsp;protected]</a
-              >
-            </div>
-            <div class="stat-sub">preview delivery</div>
-          </div>
-
-          <div class="sidebar-sep"></div>
-
-          <div class="sidebar-label">Research Sources</div>
-
-          <div
-            style="
-              font-size: 10px;
-              font-family: var(--mono);
-              color: var(--muted);
-              padding: 0 4px;
-              line-height: 2.2;
-            "
-          >
-            <div>□ Company press releases</div>
-            <div>□ Environmental data</div>
-            <div>□ Technical research</div>
-            <div>□ Industry news</div>
-            <div>□ Supporting statistics</div>
-            <div style="color: #6ee7b7; margin-top: 8px">
-              ⚡ OpenAI GPT-4o expansion
-            </div>
-            <div style="color: #fbbf24; margin-top: 4px">
-              💰 ~$0.03 per post
-            </div>
-          </div>
-
           <div class="sidebar-sep"></div>
 
           <div class="sidebar-label">Deploy Process</div>
@@ -1336,76 +1369,104 @@
               line-height: 2.2;
             "
           >
-            <div>1. Parse short post</div>
+            <div style="color: #6ee7b7; margin-bottom: 6px">
+              ⚡ OpenAI expansion
+            </div>
+            <div style="margin-bottom: 6px">
+              <select
+                id="modelSelect"
+                onchange="updateModelInfo()"
+                style="
+                  width: 100%;
+                  background: #1a1a2e;
+                  color: #e2e8f0;
+                  border: 1px solid #334155;
+                  border-radius: 4px;
+                  padding: 4px 6px;
+                  font-size: 10px;
+                  font-family: var(--mono);
+                  cursor: pointer;
+                "
+              >
+                <option value="gpt-4o-mini">gpt-4o-mini · fastest</option>
+                <option value="gpt-4o" selected>gpt-4o · balanced ✓</option>
+                <option value="gpt-4-turbo">gpt-4-turbo · thorough</option>
+              </select>
+            </div>
+            <div id="modelPriceTag" style="color: #fbbf24; margin-bottom: 10px">
+              💰 ~$0.03 per post
+            </div>
+            <div>1. Paste short post</div>
             <div>2. Research &amp; expand</div>
-            <div>3. Email preview</div>
-            <div>4. Approve/edit via reply</div>
-            <div>5. Auto-generate files</div>
-            <div>6. Optional git push</div>
+            <div>3. Review in preview modal</div>
+            <div>4. Edit &amp; publish</div>
+            <div>5. Optional git push</div>
           </div>
         </aside>
 
-        <!-- MAIN FORM -->
-        <main class="main">
-          <div class="page-title">AI Blog Expansion</div>
-          <div class="page-sub">
-            Paste your short GPT post. AI expands it into full Dr.WinMac voice
-            with research backing.
-          </div>
-
-          <!-- MODE SELECTOR -->
-          <div class="mode-selector">
-            <button
-              class="mode-btn active"
-              onclick="selectMode('smart')"
-              data-mode="smart"
-            >
-              ⚡ Smart Expansion
-            </button>
-            <button
-              class="mode-btn"
-              onclick="selectMode('research')"
-              data-mode="research"
-            >
-              🔬 Research Heavy
-            </button>
-            <button
-              class="mode-btn"
-              onclick="selectMode('voice')"
-              data-mode="voice"
-            >
-              📝 Voice Only
-            </button>
-          </div>
-
-          <div class="mode-description" id="modeDescription">
-            OpenAI GPT-4o auto-research + voice expansion. Balances depth with
-            readability.
-          </div>
-
-          <!-- INPUT SECTION -->
-          <div class="input-section">
-            <div class="input-label">
-              <svg
-                class="input-icon"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                ></path>
-              </svg>
-              Short GPT Post Input
+        <!-- CONTENT AREA: single flex container replaces cols 2-3 -->
+        <div id="contentArea">
+          <!-- MAIN FORM -->
+          <main class="main">
+            <div class="page-title">AI Blog Expansion</div>
+            <div class="page-sub">
+              Paste your short GPT post. AI expands it into full Dr.WinMac voice
+              with research backing.
             </div>
 
-            <textarea
-              class="short-post-input"
-              id="shortPostInput"
-              placeholder="Paste your short GPT post here...
+            <!-- MODE SELECTOR -->
+            <div class="mode-selector">
+              <button
+                class="mode-btn active"
+                onclick="selectMode('smart')"
+                data-mode="smart"
+              >
+                ⚡ Smart Expansion
+              </button>
+              <button
+                class="mode-btn"
+                onclick="selectMode('research')"
+                data-mode="research"
+              >
+                🔬 Research Heavy
+              </button>
+              <button
+                class="mode-btn"
+                onclick="selectMode('voice')"
+                data-mode="voice"
+              >
+                📝 Voice Only
+              </button>
+            </div>
+
+            <div class="mode-description" id="modeDescription">
+              OpenAI GPT-4o auto-research + voice expansion. Balances depth with
+              readability.
+            </div>
+
+            <!-- INPUT SECTION -->
+            <div class="input-section">
+              <div class="input-label">
+                <svg
+                  class="input-icon"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  ></path>
+                </svg>
+                Short GPT Post Input
+              </div>
+
+              <textarea
+                class="short-post-input"
+                id="shortPostInput"
+                placeholder="Paste your short GPT post here...
 
 Example:
 Under-the-Radar Tech Shift: Space-Based Data Centers 🛰️
@@ -1418,282 +1479,576 @@ Here&#39;s the environmental context:
 Modern AI data centers require massive electricity and significant water for cooling...
 
 [Continue with your short post content]"
-            ></textarea>
-          </div>
-
-          <!-- EXPANSION OPTIONS -->
-          <div class="expand-section">
-            <div class="input-label">
-              <svg
-                class="input-icon"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                ></path>
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                ></path>
-              </svg>
-              Expansion Settings
+              ></textarea>
             </div>
 
-            <div class="expand-options">
-              <div
-                class="expand-option active"
-                onclick="toggleOption(this)"
-                data-option="research"
-              >
-                <div class="expand-option-label">Auto-Research</div>
-                <div class="expand-option-desc">
-                  Pull supporting data &amp; context
+            <!-- EXPANSION OPTIONS -->
+            <div class="expand-section">
+              <div class="input-label">
+                <svg
+                  class="input-icon"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                  ></path>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  ></path>
+                </svg>
+                Expansion Settings
+              </div>
+
+              <div class="expand-options">
+                <div
+                  class="expand-option active"
+                  onclick="toggleOption(this)"
+                  data-option="research"
+                >
+                  <div class="expand-option-label">Auto-Research</div>
+                  <div class="expand-option-desc">
+                    Pull supporting data &amp; context
+                  </div>
                 </div>
-              </div>
 
-              <div
-                class="expand-option active"
-                onclick="toggleOption(this)"
-                data-option="voice"
-              >
-                <div class="expand-option-label">Voice Matching</div>
-                <div class="expand-option-desc">
-                  Book-style cadence &amp; tone
+                <div
+                  class="expand-option active"
+                  onclick="toggleOption(this)"
+                  data-option="voice"
+                >
+                  <div class="expand-option-label">Voice Matching</div>
+                  <div class="expand-option-desc">
+                    Book-style cadence &amp; tone
+                  </div>
                 </div>
-              </div>
 
-              <div
-                class="expand-option active"
-                onclick="toggleOption(this)"
-                data-option="sections"
-              >
-                <div class="expand-option-label">Section Mapping</div>
-                <div class="expand-option-desc">Auto-structure to template</div>
-              </div>
+                <div
+                  class="expand-option active"
+                  onclick="toggleOption(this)"
+                  data-option="sections"
+                >
+                  <div class="expand-option-label">Section Mapping</div>
+                  <div class="expand-option-desc">
+                    Auto-structure to template
+                  </div>
+                </div>
 
-              <div
-                class="expand-option active"
-                onclick="toggleOption(this)"
-                data-option="cta"
-              >
-                <div class="expand-option-label">Smart CTA</div>
-                <div class="expand-option-desc">
-                  Educational-appropriate CTA
+                <div
+                  class="expand-option active"
+                  onclick="toggleOption(this)"
+                  data-option="cta"
+                >
+                  <div class="expand-option-label">Smart CTA</div>
+                  <div class="expand-option-desc">
+                    Educational-appropriate CTA
+                  </div>
                 </div>
               </div>
             </div>
+
+            <!-- RESEARCH STATUS -->
+            <div class="research-status" id="researchStatus">
+              <div
+                style="
+                  font-size: 11px;
+                  font-weight: 600;
+                  color: var(--warning);
+                  font-family: var(--mono);
+                  margin-bottom: 10px;
+                "
+              >
+                RESEARCH IN PROGRESS
+              </div>
+
+              <div class="research-item">
+                <div class="research-dot" id="research-companies"></div>
+                <span>Scanning company developments...</span>
+              </div>
+
+              <div class="research-item">
+                <div class="research-dot" id="research-data"></div>
+                <span>Pulling environmental data...</span>
+              </div>
+
+              <div class="research-item">
+                <div class="research-dot" id="research-technical"></div>
+                <span>Finding technical research...</span>
+              </div>
+
+              <div class="research-item">
+                <div class="research-dot" id="research-news"></div>
+                <span>Checking recent industry news...</span>
+              </div>
+
+              <div class="research-item">
+                <div class="research-dot" id="research-voice"></div>
+                <span>Expanding in Dr.WinMac voice...</span>
+              </div>
+            </div>
+
+            <!-- EMAIL STATUS -->
+            <div class="email-status" id="emailStatus">
+              <div class="email-status-header">
+                <svg
+                  class="email-icon"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  ></path>
+                </svg>
+                <div class="email-status-title">Email Sent</div>
+              </div>
+              <div class="email-status-text">
+                Preview sent to
+                <a
+                  href="http://localhost:5000/cdn-cgi/l/email-protection"
+                  class="__cf_email__"
+                  data-cfemail="59333c2b3c3420193d2b2e303734383a772d3c3a31"
+                  >[email&nbsp;protected]</a
+                ><br />
+                Reply with "Approve" or "SECTION 2: {your edits}" to publish.
+              </div>
+            </div>
+
+            <!-- BUTTONS -->
+            <div class="btn-row">
+              <button
+                class="btn-primary"
+                id="expandBtn"
+                onclick="startExpansion()"
+              >
+                ⚡ Expand
+              </button>
+              <button class="btn-secondary" onclick="clearAll()">Clear</button>
+              <button
+                class="btn-warning"
+                style="display: none"
+                id="cancelBtn"
+                onclick="cancelExpansion()"
+              >
+                Cancel
+              </button>
+            </div>
+          </main>
+
+          <!-- MANUAL EDITOR INLINE TAB -->
+          <div class="manual-main" id="manualMain">
+            <div class="page-title">Manual Post Editor</div>
+            <div class="page-sub">
+              Write and publish a blog post manually. All fields match the
+              AI-generated format.
+            </div>
+
+            <div class="input-section">
+              <div class="input-label">Post Details</div>
+              <div class="form-group">
+                <label class="form-label">Title</label>
+                <input
+                  type="text"
+                  id="manualTitle"
+                  class="form-input"
+                  placeholder="Blog post title..."
+                  oninput="syncManualSlug()"
+                />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Slug (auto-generated)</label>
+                <input
+                  type="text"
+                  id="manualSlug"
+                  class="form-input"
+                  placeholder="url-friendly-slug"
+                  style="font-family: var(--mono); font-size: 12px"
+                />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Date</label>
+                <input
+                  type="date"
+                  id="manualDate"
+                  class="form-input"
+                  style="font-family: var(--mono)"
+                />
+              </div>
+              <div class="form-group">
+                <label class="form-label"
+                  >SEO Description (150–160 chars)</label
+                >
+                <textarea
+                  id="manualSEO"
+                  class="form-textarea"
+                  placeholder="What this post is about — for search engines..."
+                  rows="2"
+                ></textarea>
+              </div>
+            </div>
+
+            <div class="input-section">
+              <div class="input-label">Lead Paragraph</div>
+              <textarea
+                id="manualLead"
+                class="form-textarea"
+                placeholder="Opening paragraph — sets the tone, grounded and observational..."
+                rows="4"
+                style="
+                  width: 100%;
+                  background: rgba(10, 15, 30, 0.6);
+                  border: 1px solid var(--border);
+                  border-radius: 10px;
+                  padding: 16px;
+                  color: var(--text);
+                  font-family: var(--mono);
+                  font-size: 13px;
+                  line-height: 1.65;
+                  resize: vertical;
+                  outline: none;
+                "
+              ></textarea>
+            </div>
+
+            <div class="input-section">
+              <div class="input-label">Sections</div>
+              <div id="manualSectionsInline">
+                <div class="manual-section-editor">
+                  <div class="section-num">
+                    Section 1 — The Part Most People Aren't Watching
+                  </div>
+                  <input
+                    type="text"
+                    class="form-input section-heading"
+                    placeholder="The Part Most People Aren't Watching"
+                    value="The Part Most People Aren't Watching"
+                    style="margin-bottom: 10px"
+                  />
+                  <textarea
+                    class="form-textarea section-body"
+                    placeholder="1–2 paragraphs. The overlooked angle, quiet shift..."
+                    rows="4"
+                    style="width: 100%"
+                  ></textarea>
+                </div>
+                <div class="manual-section-editor">
+                  <div class="section-num">
+                    Section 2 — What's Actually Changing
+                  </div>
+                  <input
+                    type="text"
+                    class="form-input section-heading"
+                    placeholder="What's Actually Changing"
+                    value="What's Actually Changing"
+                    style="margin-bottom: 10px"
+                  />
+                  <textarea
+                    class="form-textarea section-body"
+                    placeholder="2–3 paragraphs. Technical context, real mechanics..."
+                    rows="4"
+                    style="width: 100%"
+                  ></textarea>
+                </div>
+                <div class="manual-section-editor">
+                  <div class="section-num">
+                    Section 3 — Why This Actually Matters
+                  </div>
+                  <input
+                    type="text"
+                    class="form-input section-heading"
+                    placeholder="Why This Actually Matters"
+                    value="Why This Actually Matters"
+                    style="margin-bottom: 10px"
+                  />
+                  <textarea
+                    class="form-textarea section-body"
+                    placeholder="2–3 paragraphs. Impact, benefits and honest limitations..."
+                    rows="4"
+                    style="width: 100%"
+                  ></textarea>
+                </div>
+                <div class="manual-section-editor">
+                  <div class="section-num">
+                    Section 4 — Where This Quietly Leads
+                  </div>
+                  <input
+                    type="text"
+                    class="form-input section-heading"
+                    placeholder="Where This Quietly Leads"
+                    value="Where This Quietly Leads"
+                    style="margin-bottom: 10px"
+                  />
+                  <textarea
+                    class="form-textarea section-body"
+                    placeholder="1–2 paragraphs. Realistic future trajectory, no hype..."
+                    rows="4"
+                    style="width: 100%"
+                  ></textarea>
+                </div>
+              </div>
+              <button
+                class="btn-secondary"
+                onclick="addManualSection()"
+                style="margin-top: 8px"
+              >
+                + Add Section
+              </button>
+            </div>
+
+            <div class="input-section">
+              <div class="input-label">Teaser</div>
+              <textarea
+                id="manualTeaser"
+                class="form-textarea"
+                placeholder="One compelling sentence shown in the blog listing..."
+                rows="2"
+                style="
+                  width: 100%;
+                  background: rgba(10, 15, 30, 0.6);
+                  border: 1px solid var(--border);
+                  border-radius: 10px;
+                  padding: 16px;
+                  color: var(--text);
+                  font-family: var(--mono);
+                  font-size: 13px;
+                  line-height: 1.65;
+                  resize: vertical;
+                  outline: none;
+                "
+              ></textarea>
+            </div>
+
+            <div class="input-section">
+              <div class="input-label">Image</div>
+              <div
+                style="
+                  display: flex;
+                  gap: 8px;
+                  align-items: center;
+                  flex-wrap: wrap;
+                "
+              >
+                <input
+                  type="text"
+                  id="manualImage"
+                  class="form-input"
+                  placeholder="filename.jpg"
+                  style="flex: 1; min-width: 140px"
+                  readonly
+                />
+                <label
+                  for="manualImageFile"
+                  class="btn-secondary"
+                  style="
+                    cursor: pointer;
+                    margin: 0;
+                    padding: 6px 12px;
+                    font-size: 12px;
+                  "
+                  >Choose File</label
+                >
+                <input
+                  type="file"
+                  id="manualImageFile"
+                  accept="image/*"
+                  style="display: none"
+                  onchange="uploadImage('manualImageFile','manualImage','manualImageThumb')"
+                />
+                <button
+                  class="btn-secondary"
+                  style="padding: 6px 12px; font-size: 12px"
+                  onclick="uploadImage('manualImageFile','manualImage','manualImageThumb')"
+                >
+                  Upload
+                </button>
+              </div>
+              <img
+                id="manualImageThumb"
+                src=""
+                alt=""
+                style="
+                  display: none;
+                  margin-top: 8px;
+                  max-height: 80px;
+                  border-radius: 6px;
+                  border: 1px solid var(--border);
+                "
+              />
+            </div>
+
+            <div class="btn-row">
+              <button class="btn-primary" onclick="previewManualPost()">
+                👁 Preview &amp; Publish
+              </button>
+              <button class="btn-secondary" onclick="clearManualEditor()">
+                Clear
+              </button>
+            </div>
           </div>
 
-          <!-- RESEARCH STATUS -->
-          <div class="research-status" id="researchStatus">
+          <!-- PREVIOUS POSTS: inside contentArea, full width -->
+          <div
+            id="previousPostsPanel"
+            style="display: none; flex: 1; padding: 32px 36px"
+          >
             <div
               style="
-                font-size: 11px;
-                font-weight: 600;
-                color: var(--warning);
-                font-family: var(--mono);
-                margin-bottom: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 20px;
               "
             >
-              RESEARCH IN PROGRESS
+              <div>
+                <div class="page-title">Previous Posts</div>
+                <div class="page-sub">Click a post to edit or delete it.</div>
+              </div>
+              <input
+                type="text"
+                id="postsSearch"
+                class="posts-search"
+                placeholder="Search posts..."
+                oninput="filterPosts(this.value)"
+                style="width: 240px"
+              />
             </div>
-
-            <div class="research-item">
-              <div class="research-dot" id="research-companies"></div>
-              <span>Scanning company developments...</span>
-            </div>
-
-            <div class="research-item">
-              <div class="research-dot" id="research-data"></div>
-              <span>Pulling environmental data...</span>
-            </div>
-
-            <div class="research-item">
-              <div class="research-dot" id="research-technical"></div>
-              <span>Finding technical research...</span>
-            </div>
-
-            <div class="research-item">
-              <div class="research-dot" id="research-news"></div>
-              <span>Checking recent industry news...</span>
-            </div>
-
-            <div class="research-item">
-              <div class="research-dot" id="research-voice"></div>
-              <span>Expanding in Dr.WinMac voice...</span>
+            <div id="postsList" class="posts-list">
+              <div class="loading-msg">Loading posts...</div>
             </div>
           </div>
-
-          <!-- EMAIL STATUS -->
-          <div class="email-status" id="emailStatus">
-            <div class="email-status-header">
-              <svg
-                class="email-icon"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                ></path>
-              </svg>
-              <div class="email-status-title">Email Sent</div>
-            </div>
-            <div class="email-status-text">
-              Preview sent to
-              <a
-                href="http://localhost:5000/cdn-cgi/l/email-protection"
-                class="__cf_email__"
-                data-cfemail="59333c2b3c3420193d2b2e303734383a772d3c3a31"
-                >[email&nbsp;protected]</a
-              ><br />
-              Reply with "Approve" or "SECTION 2: {your edits}" to publish.
-            </div>
-          </div>
-
-          <!-- BUTTONS -->
-          <div class="btn-row">
-            <button
-              class="btn-primary"
-              id="expandBtn"
-              onclick="startExpansion()"
-            >
-              ⚡ Expand &amp; Email Preview
-            </button>
-            <button class="btn-secondary" onclick="clearAll()">Clear</button>
-            <button
-              class="btn-warning"
-              style="display: none"
-              id="cancelBtn"
-              onclick="cancelExpansion()"
-            >
-              Cancel
-            </button>
-          </div>
-        </main>
-
-        <!-- PREVIEW PANEL -->
-        <aside class="preview-panel">
-          <div class="preview-header">
-            <div class="preview-title-bar">Expansion Preview</div>
-          </div>
-
-          <div class="preview-body" id="previewBody">
-            <pre class="preview-content">
-TITLE: The Quiet Revolution of Space-Based Data Centers
-SLUG: the-quiet-revolution-of-space-based-data-centers
-SEO: Exploring the shift to orbital data centers and their potential impact on energy efficiency and environmental concerns.
-
-LEAD:
-In the ever-evolving landscape of technology, some shifts happen quietly, almost imperceptibly at first, until they reshape the very foundation of our digital world. Amongst the noise of new AI models and tools, a subtle yet profound change is taking place in the realm of infrastructure.
-
-SECTIONS:
-1. The Part Most People Aren't Watching
-While much of the public discourse around AI focuses on software advancements and novel applications, the underlying infrastructure that supports these technologies is undergoing a transformation that many overlook. The traditional data centers, which have been the workhorses of digital storage and computation, are being reconsidered. In the background, a new concept is emerging: space-based data centers. These are not the stuff of science fiction but a tangible possibility being explored by companies and researchers worldwide. Major cloud providers and startups alike are beginning to invest in the potential of placing computational infrastructure in orbit, where the unique conditions of space offer distinct advantages.
-
-2. What's Actually Changing
-The primary driver behind this shift is the growing demand for energy and cooling in data centers, which has become an environmental challenge. On Earth, these centers consume vast amounts of electricity and water to prevent overheating—a necessity that poses sustainability concerns as AI continues to scale. In space, however, data centers can take advantage of continuous solar exposure, harnessing solar energy more efficiently without the atmospheric interference experienced on Earth. Furthermore, the vacuum of space allows heat to be dissipated through radiation, circumventing the need for water-intensive cooling processes. Technical feasibility studies are underway, addressing engineering challenges such as the durability of equipment in space and the logistics of maintaining orbital infrastructure. Recent innovations, including advancements in solar panel efficiency and lightweight materials, bring these ambitions closer to reality.
-
-3. Why This Actually Matters
-The implications of space-based data centers extend beyond technological novelty; they represent a potential shift in the sustainability equation of our digital future. By reducing reliance on local energy grids and minimizing water consumption, these orbital facilities could alleviate some of the environmental pressures associated with conventional data centers. This shift is particularly relevant as global awareness of environmental issues grows. While the establishment of such infrastructure does not come without its own environmental costs—such as the impact of rocket launches and space manufacturing—the net benefits in terms of reduced energy and water usage could be substantial. Companies involved in this sector are already forming partnerships and announcing developments that hint at a future where space-based solutions complement Earth-based systems, creating a hybrid infrastructure that is more resilient and environmentally conscious.
-
-4. Where This Quietly Leads
-Looking ahead, the trajectory of space-based data centers could lead us towards a future where our digital infrastructure is not confined to the limitations of terrestrial resources. In the near term, we can expect research and pilot projects to explore the potential of this technology. As these efforts progress, experimental and niche workloads might be tested in orbit, gradually expanding the role of space-based solutions. Ultimately, a hybrid model could emerge, blending the strengths of both Earth and space-based infrastructures. This quiet revolution may not eliminate all environmental impacts, but it represents a meaningful step towards a more sustainable digital ecosystem. As we continue to advance technologically, it's these understated shifts that often hold the most promise for transformative change.
-
-TEASER: Unveiling the subtle shift towards orbital data centers and their potential to reshape the environmental impact of digital infrastructure.
-IMAGE: undefined</pre
-            >
-          </div>
-        </aside>
+          <!-- end previousPostsPanel -->
+        </div>
+        <!-- end #contentArea -->
       </div>
+      <!-- end .layout -->
 
       <!-- TOAST -->
       <div class="success-toast" id="toast" style="display: none">
         ✓ Expansion complete — preview emailed
       </div>
 
-      <!-- MANUAL EDITOR MODAL -->
-      <div class="modal-overlay" id="manualEditorModal" onclick="closeManualEditorModal(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-          <div class="modal-header">
-            <div class="modal-title">Create Blog Post (Manual)</div>
-            <button class="modal-close" onclick="closeManualEditorModal()">✕</button>
-          </div>
-          <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-            <div class="form-group">
-              <label class="form-label">Title</label>
-              <input type="text" id="manualTitle" class="form-input" placeholder="Blog post title...">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Lead (Intro Paragraph)</label>
-              <textarea id="manualLead" class="form-textarea" placeholder="Opening paragraph..." rows="4"></textarea>
-            </div>
-            <div class="form-group">
-              <label class="form-label">SEO Description</label>
-              <textarea id="manualSEO" class="form-textarea" placeholder="150-160 characters..." rows="2"></textarea>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Sections</label>
-              <div id="manualSections">
-                <div class="section-editor">
-                  <input type="text" class="form-input section-heading" placeholder="Section heading...">
-                  <textarea class="form-textarea section-body" placeholder="Section content..." rows="3"></textarea>
-                  <button class="btn-small-danger" onclick="removeSection(this)">Remove</button>
-                </div>
-              </div>
-              <button class="btn-small" onclick="addSection()">+ Add Section</button>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Teaser</label>
-              <textarea id="manualTeaser" class="form-textarea" placeholder="One-line teaser..." rows="2"></textarea>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button class="btn-secondary" onclick="closeManualEditorModal()">Cancel</button>
-            <button class="btn-primary" onclick="publishFromManualEditor()">📤 Publish</button>
-          </div>
-        </div>
-      </div>
-
       <!-- BLOG PREVIEW MODAL -->
-      <div class="modal-overlay" id="blogPreviewModal" onclick="closeBlogPreviewModal(event)">
+      <div
+        class="modal-overlay"
+        id="blogPreviewModal"
+        onclick="closeBlogPreviewModal(event)"
+      >
         <div class="modal-content modal-wide" onclick="event.stopPropagation()">
           <div class="modal-header">
             <div class="modal-title">Blog Post Preview & Editor</div>
-            <button class="modal-close" onclick="closeBlogPreviewModal()">✕</button>
+            <button class="modal-close" onclick="closeBlogPreviewModal()">
+              ✕
+            </button>
           </div>
           <div class="modal-body modal-split">
             <!-- Left: Editable Form -->
             <div class="modal-left">
               <div class="form-group">
                 <label class="form-label">Title</label>
-                <input type="text" id="previewTitle" class="form-input" placeholder="Title...">
+                <input
+                  type="text"
+                  id="previewTitle"
+                  class="form-input"
+                  placeholder="Title..."
+                />
               </div>
               <div class="form-group">
                 <label class="form-label">Lead</label>
-                <textarea id="previewLead" class="form-textarea" placeholder="Lead..." rows="3"></textarea>
+                <textarea
+                  id="previewLead"
+                  class="form-textarea"
+                  placeholder="Lead..."
+                  rows="3"
+                ></textarea>
               </div>
               <div class="form-group">
                 <label class="form-label">SEO</label>
-                <textarea id="previewSEO" class="form-textarea" placeholder="SEO..." rows="2"></textarea>
+                <textarea
+                  id="previewSEO"
+                  class="form-textarea"
+                  placeholder="SEO..."
+                  rows="2"
+                ></textarea>
               </div>
               <div class="form-group">
                 <label class="form-label">Sections</label>
                 <div id="previewSections"></div>
               </div>
               <div class="form-group">
+                <label class="form-label">Image</label>
+                <div
+                  style="
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                    flex-wrap: wrap;
+                  "
+                >
+                  <input
+                    type="text"
+                    id="previewImage"
+                    class="form-input"
+                    placeholder="filename.jpg"
+                    style="flex: 1; min-width: 140px"
+                    readonly
+                  />
+                  <label
+                    for="previewImageFile"
+                    class="btn-secondary"
+                    style="
+                      cursor: pointer;
+                      margin: 0;
+                      padding: 6px 12px;
+                      font-size: 12px;
+                    "
+                    >Choose File</label
+                  >
+                  <input
+                    type="file"
+                    id="previewImageFile"
+                    accept="image/*"
+                    style="display: none"
+                    onchange="uploadImage('previewImageFile','previewImage','previewImageThumb')"
+                  />
+                  <button
+                    class="btn-secondary"
+                    style="padding: 6px 12px; font-size: 12px"
+                    onclick="uploadImage('previewImageFile','previewImage','previewImageThumb')"
+                  >
+                    Upload
+                  </button>
+                </div>
+                <img
+                  id="previewImageThumb"
+                  src=""
+                  alt=""
+                  style="
+                    display: none;
+                    margin-top: 8px;
+                    max-height: 80px;
+                    border-radius: 6px;
+                    border: 1px solid var(--border);
+                  "
+                />
+              </div>
+              <div class="form-group">
                 <label class="form-label">Teaser</label>
-                <textarea id="previewTeaser" class="form-textarea" placeholder="Teaser..." rows="2"></textarea>
+                <textarea
+                  id="previewTeaser"
+                  class="form-textarea"
+                  placeholder="Teaser..."
+                  rows="2"
+                ></textarea>
               </div>
             </div>
 
@@ -1704,23 +2059,25 @@ IMAGE: undefined</pre
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn-secondary" onclick="closeBlogPreviewModal()">Cancel</button>
-            <button class="btn-warning" id="deletePostBtn" style="display: none;" onclick="deleteCurrentPost()">🗑️ Delete</button>
-            <button class="btn-primary" onclick="publishFromPreviewModal()">📤 Publish</button>
+            <button class="btn-secondary" onclick="closeBlogPreviewModal()">
+              Cancel
+            </button>
+            <button
+              class="btn-warning"
+              id="deletePostBtn"
+              style="display: none"
+              onclick="deleteCurrentPost()"
+            >
+              🗑️ Delete
+            </button>
+            <button class="btn-primary" onclick="publishFromPreviewModal()">
+              📤 Publish
+            </button>
           </div>
         </div>
       </div>
 
-      <!-- PREVIOUS POSTS PANEL -->
-      <div id="previousPostsPanel" class="previous-posts-panel" style="display: none;">
-        <div class="posts-header">
-          <div class="posts-title">Previous Posts</div>
-          <input type="text" id="postsSearch" class="posts-search" placeholder="Search posts...">
-        </div>
-        <div id="postsList" class="posts-list">
-          <div class="loading-msg">Loading posts...</div>
-        </div>
-      </div>
+      <!-- PREVIOUS POSTS PANEL is now INSIDE the layout grid, see below -->
 
       <script data-cfasync="false" src="./assets/email-decode.min.js"></script>
       <script>
@@ -1745,6 +2102,63 @@ IMAGE: undefined</pre
         let currentMode = "smart";
         let expansionInProgress = false;
         let expandedContent = null;
+
+        // ── IMAGE UPLOAD ──
+        async function uploadImage(fileInputId, nameInputId, thumbId) {
+          const fileInput = document.getElementById(fileInputId);
+          const file = fileInput.files && fileInput.files[0];
+          if (!file) {
+            alert("Please choose a file first.");
+            return;
+          }
+
+          // Try to grab the current post title for SEO naming
+          const titleEl =
+            document.getElementById("previewTitle") ||
+            document.getElementById("manualTitle");
+          const title = titleEl ? titleEl.value.trim() : "";
+
+          const formData = new FormData();
+          formData.append("file", file);
+          if (title) formData.append("title", title);
+
+          try {
+            const res = await fetch(`${API_BASE_URL}/api/upload-image`, {
+              method: "POST",
+              headers: { Authorization: `Bearer ${adminPasscode}` },
+              body: formData,
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || res.status);
+            document.getElementById(nameInputId).value = data.filename;
+            const thumb = document.getElementById(thumbId);
+            thumb.src = URL.createObjectURL(file);
+            thumb.style.display = "block";
+            showToast("✓ Uploaded: " + data.filename);
+          } catch (err) {
+            alert("Image upload failed: " + err.message);
+          }
+        }
+
+        // ── MODEL SELECTOR ──
+        const MODEL_INFO = {
+          "gpt-4o-mini": {
+            price: "~$0.002 per post",
+            label: "gpt-4o-mini · fastest",
+          },
+          "gpt-4o": { price: "~$0.03 per post", label: "gpt-4o · balanced ✓" },
+          "gpt-4-turbo": {
+            price: "~$0.12 per post",
+            label: "gpt-4-turbo · thorough",
+          },
+        };
+        function updateModelInfo() {
+          const sel = document.getElementById("modelSelect");
+          const tag = document.getElementById("modelPriceTag");
+          if (!sel || !tag) return;
+          const info = MODEL_INFO[sel.value] || MODEL_INFO["gpt-4o"];
+          tag.textContent = "💰 " + info.price;
+        }
 
         // ── MODE SELECTION ──
         function selectMode(mode) {
@@ -1801,28 +2215,22 @@ IMAGE: undefined</pre
           document.getElementById("researchStatus").classList.add("active");
 
           try {
-            // Simulate research process
-            await simulateResearch();
+            // Run animation and API call in parallel — no double-wait
+            const [expanded] = await Promise.all([
+              expandPost(shortPost),
+              simulateResearch(),
+            ]);
 
-            // Generate expanded content
-            const expanded = await expandPost(shortPost);
+            // Populate Manual Editor and switch to it
+            populateManualEditor(expanded);
 
-            // Send email preview
-            await sendEmailPreview(expanded);
-
-            // Update preview panel
-            updatePreviewPanel(expanded);
-
-            // Show success
-            showEmailStatus();
-            showToast();
+            showToast("✓ Expansion complete — review in Manual Editor");
           } catch (error) {
             alert("Expansion failed: " + error.message);
           } finally {
             expansionInProgress = false;
             document.getElementById("expandBtn").disabled = false;
-            document.getElementById("expandBtn").textContent =
-              "⚡ Expand & Email Preview";
+            document.getElementById("expandBtn").textContent = "⚡ Expand";
             document.getElementById("cancelBtn").style.display = "none";
             document
               .getElementById("researchStatus")
@@ -1841,7 +2249,7 @@ IMAGE: undefined</pre
 
             // Simulate research time
             await new Promise((resolve) =>
-              setTimeout(resolve, Math.random() * 2000 + 1000)
+              setTimeout(resolve, Math.random() * 600 + 400)
             );
 
             document.getElementById(dotId).classList.remove("active");
@@ -1868,6 +2276,8 @@ IMAGE: undefined</pre
               body: JSON.stringify({
                 short_post: shortPost,
                 mode: currentMode,
+                model:
+                  document.getElementById("modelSelect")?.value || "gpt-4o",
               }),
             });
 
@@ -2014,47 +2424,12 @@ IMAGE: undefined</pre
           return "How orbital infrastructure could shift the environmental equation for AI computing.";
         }
 
-        // ── EMAIL SIMULATION ──
-        async function sendEmailPreview(content) {
-          try {
-            // Ensure date exists
-            const date = content.date || new Date().toISOString().slice(0, 10);
-
-            const payload = {
-              title: content.title,
-              slug: content.slug,
-              lead: content.lead,
-              sections: content.sections,
-              teaser: content.teaser,
-              seo: content.seo,
-              date: date,
-            };
-
-            const response = await fetch(`${API_BASE_URL}/api/preview`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${adminPasscode}`,
-              },
-              body: JSON.stringify(payload),
-            });
-
-            if (!response.ok) {
-              throw new Error(`Failed to send preview: ${response.status}`);
-            }
-
-            console.log("Preview email sent successfully");
-          } catch (error) {
-            console.error("Email error:", error.message);
-            // Don't throw - allow user to continue even if email fails
-          }
+        // Email preview disabled — expansion previewed inline in modal
+        async function sendEmailPreview() {
+          /* disabled */
         }
-
         function showEmailStatus() {
-          document.getElementById("emailStatus").classList.add("active");
-          setTimeout(() => {
-            document.getElementById("emailStatus").classList.remove("active");
-          }, 8000);
+          /* disabled */
         }
 
         // ── PREVIEW PANEL ──
@@ -2092,8 +2467,7 @@ IMAGE: ${content.imagePath}`;
           if (confirm("Cancel expansion in progress?")) {
             expansionInProgress = false;
             document.getElementById("expandBtn").disabled = false;
-            document.getElementById("expandBtn").textContent =
-              "⚡ Expand & Email Preview";
+            document.getElementById("expandBtn").textContent = "⚡ Expand";
             document.getElementById("cancelBtn").style.display = "none";
             document
               .getElementById("researchStatus")
@@ -2115,8 +2489,9 @@ IMAGE: ${content.imagePath}`;
           }
         }
 
-        function showToast() {
+        function showToast(msg) {
           const toast = document.getElementById("toast");
+          toast.textContent = msg || "✓ Done";
           toast.style.display = "block";
           setTimeout(() => {
             toast.style.display = "none";
@@ -2134,119 +2509,193 @@ IMAGE: ${content.imagePath}`;
         // ── TAB SWITCHING ──
         let currentActiveTab = "expand";
 
+        // ── POPULATE MANUAL EDITOR FROM EXPANSION ──
+        function populateManualEditor(expanded) {
+          // Fill scalar fields
+          document.getElementById("manualTitle").value = expanded.title || "";
+          document.getElementById("manualSlug").value =
+            expanded.slug || generateSlug(expanded.title || "");
+          document.getElementById("manualLead").value = expanded.lead || "";
+          document.getElementById("manualSEO").value = expanded.seo || "";
+          document.getElementById("manualTeaser").value = expanded.teaser || "";
+
+          // Rebuild sections
+          const container = document.getElementById("manualSectionsInline");
+          container.innerHTML = "";
+          const sections = expanded.sections || [];
+          sections.forEach((sec, idx) => {
+            const div = document.createElement("div");
+            div.className = "manual-section-editor";
+            div.innerHTML = `
+              <div class="section-num">Section ${idx + 1}</div>
+              <input type="text" class="form-input section-heading" placeholder="Section heading..." style="margin-bottom:10px;" value="${escapeHtml(
+                sec.heading || ""
+              )}">
+              <textarea class="form-textarea section-body" placeholder="Section content..." rows="4" style="width:100%;">${escapeHtml(
+                sec.body || ""
+              )}</textarea>
+              <button class="btn-small-danger" onclick="this.parentElement.remove()" style="margin-top:8px;">Remove</button>
+            `;
+            container.appendChild(div);
+          });
+
+          // Switch to Manual Editor tab
+          switchTab("manual");
+        }
+
         function switchTab(tabName) {
           currentActiveTab = tabName;
-          
-          // Update nav items
-          document.querySelectorAll(".nav-item").forEach((item, idx) => {
-            item.classList.remove("active");
-          });
-          
+
+          // Clear all nav active states
+          document
+            .querySelectorAll(".nav-item")
+            .forEach((item) => item.classList.remove("active"));
+
+          // Hide all content panels — sidebar stays visible via .layout grid
+          document.querySelector(".main").style.display = "none";
+          document.getElementById("manualMain").style.display = "none";
+          document.getElementById("previousPostsPanel").style.display = "none";
+
           if (tabName === "expand") {
             document.querySelectorAll(".nav-item")[0].classList.add("active");
             document.querySelector(".main").style.display = "flex";
-            document.querySelector(".preview-panel").style.display = "flex";
-            document.getElementById("previousPostsPanel").style.display = "none";
+            document.querySelector(".main").style.flexDirection = "column";
+          } else if (tabName === "manual") {
+            document.getElementById("manualEditorTab").classList.add("active");
+            document.getElementById("manualMain").style.display = "flex";
+            document.getElementById("manualMain").style.flexDirection =
+              "column";
+            // init date to today
+            if (!document.getElementById("manualDate").value) {
+              document.getElementById("manualDate").value = new Date()
+                .toISOString()
+                .slice(0, 10);
+            }
           } else if (tabName === "previousPosts") {
             document.getElementById("previousPostsTab").classList.add("active");
-            document.querySelector(".main").style.display = "none";
-            document.querySelector(".preview-panel").style.display = "none";
-            document.getElementById("previousPostsPanel").style.display = "block";
+            document.getElementById("previousPostsPanel").style.display =
+              "flex";
+            document.getElementById("previousPostsPanel").style.flexDirection =
+              "column";
             loadPreviousPosts();
           }
         }
 
-        // ── MANUAL EDITOR MODAL ──
+        // ── MANUAL EDITOR MODAL (legacy popup — kept for compat but not used) ──
         function openManualEditorModal() {
-          document.getElementById("manualEditorModal").classList.add("active");
-          resetManualEditor();
+          switchTab("manual");
         }
-
         function closeManualEditorModal(event) {
           if (event && event.target.id !== "manualEditorModal") return;
-          document.getElementById("manualEditorModal").classList.remove("active");
+          document
+            .getElementById("manualEditorModal")
+            .classList.remove("active");
         }
 
-        function resetManualEditor() {
+        // ── MANUAL EDITOR INLINE ──
+        function syncManualSlug() {
+          const title = document.getElementById("manualTitle").value;
+          document.getElementById("manualSlug").value = generateSlug(title);
+        }
+
+        function addManualSection() {
+          const container = document.getElementById("manualSectionsInline");
+          const idx =
+            container.querySelectorAll(".manual-section-editor").length + 1;
+          const defaultHeading = `Section ${idx} Heading`;
+          const div = document.createElement("div");
+          div.className = "manual-section-editor";
+          div.innerHTML = `
+            <div class="section-num">Section ${idx}</div>
+            <input type="text" class="form-input section-heading" value="${defaultHeading}" placeholder="Section heading..." style="margin-bottom:10px;">
+            <textarea class="form-textarea section-body" placeholder="Section content..." rows="4" style="width:100%;"></textarea>
+            <button class="btn-small-danger" onclick="this.parentElement.remove()" style="margin-top:8px;">Remove</button>
+          `;
+          container.appendChild(div);
+        }
+
+        function clearManualEditor() {
+          if (!confirm("Clear all manual editor content?")) return;
           document.getElementById("manualTitle").value = "";
+          document.getElementById("manualSlug").value = "";
           document.getElementById("manualLead").value = "";
           document.getElementById("manualSEO").value = "";
           document.getElementById("manualTeaser").value = "";
-          document.getElementById("manualSections").innerHTML = `
-            <div class="section-editor">
-              <input type="text" class="form-input section-heading" placeholder="Section heading...">
-              <textarea class="form-textarea section-body" placeholder="Section content..." rows="3"></textarea>
-              <button class="btn-small-danger" onclick="removeSection(this)">Remove</button>
+          document.getElementById("manualImage").value = "";
+          const mt = document.getElementById("manualImageThumb");
+          if (mt) {
+            mt.src = "";
+            mt.style.display = "none";
+          }
+          document.getElementById("manualImageFile").value = "";
+          document.getElementById("manualDate").value = new Date()
+            .toISOString()
+            .slice(0, 10);
+          // Reset to 4 default sections
+          document.getElementById("manualSectionsInline").innerHTML = `
+            <div class="manual-section-editor">
+              <div class="section-num">Section 1</div>
+              <input type="text" class="form-input section-heading" value="The Part Most People Aren't Watching" placeholder="Section heading..." style="margin-bottom:10px;">
+              <textarea class="form-textarea section-body" placeholder="1–2 paragraphs..." rows="4" style="width:100%;"></textarea>
             </div>
-          `;
+            <div class="manual-section-editor">
+              <div class="section-num">Section 2</div>
+              <input type="text" class="form-input section-heading" value="What's Actually Changing" placeholder="Section heading..." style="margin-bottom:10px;">
+              <textarea class="form-textarea section-body" placeholder="2–3 paragraphs..." rows="4" style="width:100%;"></textarea>
+            </div>
+            <div class="manual-section-editor">
+              <div class="section-num">Section 3</div>
+              <input type="text" class="form-input section-heading" value="Why This Actually Matters" placeholder="Section heading..." style="margin-bottom:10px;">
+              <textarea class="form-textarea section-body" placeholder="2–3 paragraphs..." rows="4" style="width:100%;"></textarea>
+            </div>
+            <div class="manual-section-editor">
+              <div class="section-num">Section 4</div>
+              <input type="text" class="form-input section-heading" value="Where This Quietly Leads" placeholder="Section heading..." style="margin-bottom:10px;">
+              <textarea class="form-textarea section-body" placeholder="1–2 paragraphs..." rows="4" style="width:100%;"></textarea>
+            </div>`;
+        }
+
+        function previewManualPost() {
+          const sections = [];
+          document
+            .querySelectorAll("#manualSectionsInline .manual-section-editor")
+            .forEach((ed) => {
+              const h = ed.querySelector(".section-heading").value.trim();
+              const b = ed.querySelector(".section-body").value.trim();
+              if (h || b) sections.push({ heading: h, body: b });
+            });
+          const title =
+            document.getElementById("manualTitle").value.trim() || "Untitled";
+          const postData = {
+            title,
+            slug:
+              document.getElementById("manualSlug").value ||
+              generateSlug(title),
+            lead: document.getElementById("manualLead").value.trim(),
+            seo: document.getElementById("manualSEO").value.trim(),
+            teaser: document.getElementById("manualTeaser").value.trim(),
+            image_path: document.getElementById("manualImage").value.trim(),
+            sections,
+            date:
+              document.getElementById("manualDate").value ||
+              new Date().toISOString().slice(0, 10),
+          };
+          if (!postData.title || postData.title === "Untitled") {
+            alert("Please enter a title");
+            return;
+          }
+          openBlogPreviewModal(postData);
         }
 
         function addSection() {
-          const container = document.getElementById("manualSections");
-          const newSection = document.createElement("div");
-          newSection.className = "section-editor";
-          newSection.innerHTML = `
-            <input type="text" class="form-input section-heading" placeholder="Section heading...">
-            <textarea class="form-textarea section-body" placeholder="Section content..." rows="3"></textarea>
-            <button class="btn-small-danger" onclick="removeSection(this)">Remove</button>
-          `;
-          container.appendChild(newSection);
-        }
-
+          addManualSection();
+        } // compat alias
         function removeSection(btn) {
           btn.parentElement.remove();
         }
 
         async function publishFromManualEditor() {
-          const sections = [];
-          document.querySelectorAll(".section-editor").forEach(editor => {
-            const heading = editor.querySelector(".section-heading").value;
-            const body = editor.querySelector(".section-body").value;
-            if (heading && body) {
-              sections.push({ heading, body });
-            }
-          });
-
-          const postData = {
-            title: document.getElementById("manualTitle").value || "Untitled",
-            slug: generateSlug(document.getElementById("manualTitle").value),
-            lead: document.getElementById("manualLead").value || "",
-            seo: document.getElementById("manualSEO").value || "",
-            teaser: document.getElementById("manualTeaser").value || "",
-            sections: sections,
-            date: new Date().toISOString().slice(0, 10)
-          };
-
-          if (!postData.title || postData.title === "Untitled") {
-            alert("Please enter a title");
-            return;
-          }
-
-          if (sections.length === 0) {
-            alert("Please add at least one section");
-            return;
-          }
-
-          try {
-            const response = await fetch(`${API_BASE_URL}/api/publish`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${adminPasscode}`,
-              },
-              body: JSON.stringify(postData),
-            });
-
-            if (!response.ok) {
-              throw new Error(`Failed to publish: ${response.status}`);
-            }
-
-            showToast();
-            closeManualEditorModal();
-            resetManualEditor();
-          } catch (error) {
-            alert("Publish failed: " + error.message);
-          }
+          previewManualPost();
         }
 
         // ── BLOG PREVIEW MODAL ──
@@ -2254,45 +2703,62 @@ IMAGE: ${content.imagePath}`;
 
         function openBlogPreviewModal(postData) {
           currentEditingSlug = postData.slug;
-          
+
           document.getElementById("previewTitle").value = postData.title || "";
           document.getElementById("previewLead").value = postData.lead || "";
           document.getElementById("previewSEO").value = postData.seo || "";
-          document.getElementById("previewTeaser").value = postData.teaser || "";
-          
+          document.getElementById("previewTeaser").value =
+            postData.teaser || "";
+          document.getElementById("previewImage").value =
+            postData.image_path || postData.imagePath || "";
+
           // Render sections
           const sectionsContainer = document.getElementById("previewSections");
           sectionsContainer.innerHTML = "";
-          
+
           if (postData.sections && Array.isArray(postData.sections)) {
             postData.sections.forEach((section, idx) => {
               const sectionDiv = document.createElement("div");
               sectionDiv.className = "section-editor";
               sectionDiv.innerHTML = `
-                <input type="text" class="form-input section-heading" placeholder="Section heading..." value="${escapeHtml(section.heading || "")}">
-                <textarea class="form-textarea section-body" placeholder="Section content..." rows="3">${escapeHtml(section.body || "")}</textarea>
+                <input type="text" class="form-input section-heading" placeholder="Section heading..." value="${escapeHtml(
+                  section.heading || ""
+                )}">
+                <textarea class="form-textarea section-body" placeholder="Section content..." rows="3">${escapeHtml(
+                  section.body || ""
+                )}</textarea>
                 <button class="btn-small-danger" onclick="removeSection(this)">Remove</button>
               `;
               sectionsContainer.appendChild(sectionDiv);
             });
           }
-          
+
           // Show delete button if editing existing post
-          document.getElementById("deletePostBtn").style.display = currentEditingSlug ? "block" : "none";
-          
+          document.getElementById("deletePostBtn").style.display =
+            currentEditingSlug ? "block" : "none";
+
           // Set up live preview
           updateLivePreview();
-          
-          // Attach live preview listeners
-          document.getElementById("previewTitle").addEventListener("input", updateLivePreview);
-          document.getElementById("previewLead").addEventListener("input", updateLivePreview);
-          
+
+          // Attach live preview listeners — title, lead, and any section input
+          document
+            .getElementById("previewTitle")
+            .addEventListener("input", updateLivePreview);
+          document
+            .getElementById("previewLead")
+            .addEventListener("input", updateLivePreview);
+          document
+            .getElementById("previewSections")
+            .addEventListener("input", updateLivePreview);
+
           document.getElementById("blogPreviewModal").classList.add("active");
         }
 
         function closeBlogPreviewModal(event) {
           if (event && event.target.id !== "blogPreviewModal") return;
-          document.getElementById("blogPreviewModal").classList.remove("active");
+          document
+            .getElementById("blogPreviewModal")
+            .classList.remove("active");
           currentEditingSlug = null;
         }
 
@@ -2300,50 +2766,71 @@ IMAGE: ${content.imagePath}`;
           const title = document.getElementById("previewTitle").value;
           const lead = document.getElementById("previewLead").value;
           const sections = [];
-          
-          document.querySelectorAll("#previewSections .section-editor").forEach(editor => {
-            const heading = editor.querySelector(".section-heading").value;
-            const body = editor.querySelector(".section-body").value;
-            if (heading) {
+
+          document
+            .querySelectorAll("#previewSections .section-editor")
+            .forEach((editor) => {
+              const heading = editor.querySelector(".section-heading").value;
+              const body = editor.querySelector(".section-body").value;
               sections.push({ heading, body });
-            }
-          });
-          
+            });
+
           let html = "";
-          if (title) {
-            html += `<h2>${escapeHtml(title)}</h2>`;
-          }
-          if (lead) {
-            html += `<p><em>${escapeHtml(lead)}</em></p>`;
-          }
-          sections.forEach(s => {
-            html += `<h3>${escapeHtml(s.heading)}</h3>`;
+          if (title)
+            html += `<h2 style="font-size:18px;font-weight:700;margin:0 0 12px">${escapeHtml(
+              title
+            )}</h2>`;
+          if (lead)
+            html += `<p style="font-style:italic;color:var(--muted);margin-bottom:16px;">${escapeHtml(
+              lead
+            )}</p>`;
+
+          sections.forEach((s) => {
+            if (s.heading)
+              html += `<h3 style="font-size:14px;font-weight:700;margin:14px 0 6px;color:#6ee7b7;">${escapeHtml(
+                s.heading
+              )}</h3>`;
             if (s.body) {
-              html += `<p>${escapeHtml(s.body)}</p>`;
+              s.body
+                .split("\n\n")
+                .filter((p) => p.trim())
+                .forEach((p) => {
+                  html += `<p style="margin-bottom:10px;">${escapeHtml(
+                    p.trim()
+                  )}</p>`;
+                });
             }
           });
-          
-          document.getElementById("previewHtml").innerHTML = html || "<p style='color: var(--muted);'>Preview will appear here...</p>";
+
+          document.getElementById("previewHtml").innerHTML =
+            html ||
+            "<p style='color: var(--muted);'>Preview will appear here...</p>";
         }
 
         async function publishFromPreviewModal() {
           const sections = [];
-          document.querySelectorAll("#previewSections .section-editor").forEach(editor => {
-            const heading = editor.querySelector(".section-heading").value;
-            const body = editor.querySelector(".section-body").value;
-            if (heading && body) {
-              sections.push({ heading, body });
-            }
-          });
+          document
+            .querySelectorAll("#previewSections .section-editor")
+            .forEach((editor) => {
+              const heading = editor.querySelector(".section-heading").value;
+              const body = editor.querySelector(".section-body").value;
+              if (heading && body) {
+                sections.push({ heading, body });
+              }
+            });
 
           const postData = {
             title: document.getElementById("previewTitle").value || "Untitled",
-            slug: currentEditingSlug || generateSlug(document.getElementById("previewTitle").value),
+            slug:
+              currentEditingSlug ||
+              generateSlug(document.getElementById("previewTitle").value),
             lead: document.getElementById("previewLead").value || "",
             seo: document.getElementById("previewSEO").value || "",
             teaser: document.getElementById("previewTeaser").value || "",
+            image_path:
+              document.getElementById("previewImage").value.trim() || "",
             sections: sections,
-            date: new Date().toISOString().slice(0, 10)
+            date: new Date().toISOString().slice(0, 10),
           };
 
           try {
@@ -2360,7 +2847,7 @@ IMAGE: ${content.imagePath}`;
               throw new Error(`Failed to publish: ${response.status}`);
             }
 
-            showToast();
+            showToast("✓ Post published successfully!");
             closeBlogPreviewModal();
             currentEditingSlug = null;
           } catch (error) {
@@ -2374,17 +2861,24 @@ IMAGE: ${content.imagePath}`;
             return;
           }
 
-          if (!confirm(`Delete post "${document.getElementById("previewTitle").value}"?`)) {
+          if (
+            !confirm(
+              `Delete post "${document.getElementById("previewTitle").value}"?`
+            )
+          ) {
             return;
           }
 
           try {
-            const response = await fetch(`${API_BASE_URL}/api/posts/${currentEditingSlug}`, {
-              method: "DELETE",
-              headers: {
-                Authorization: `Bearer ${adminPasscode}`,
-              },
-            });
+            const response = await fetch(
+              `${API_BASE_URL}/api/posts/${currentEditingSlug}`,
+              {
+                method: "DELETE",
+                headers: {
+                  Authorization: `Bearer ${adminPasscode}`,
+                },
+              }
+            );
 
             if (!response.ok) {
               throw new Error(`Failed to delete: ${response.status}`);
@@ -2399,37 +2893,87 @@ IMAGE: ${content.imagePath}`;
         }
 
         // ── PREVIOUS POSTS ──
+        // slug → post object map, populated by loadPreviousPosts
+        const postsCache = {};
+
         async function loadPreviousPosts() {
           const postsList = document.getElementById("postsList");
-          postsList.innerHTML = '<div class="loading-msg">Loading posts...</div>';
+          postsList.innerHTML =
+            '<div class="loading-msg">Loading posts...</div>';
 
           try {
             const response = await fetch(`${API_BASE_URL}/api/posts`, {
-              headers: {
-                Authorization: `Bearer ${adminPasscode}`,
-              },
+              headers: { Authorization: `Bearer ${adminPasscode}` },
             });
 
-            if (!response.ok) {
+            if (!response.ok)
               throw new Error(`Failed to load posts: ${response.status}`);
-            }
 
-            const posts = await response.json();
+            const rawData = await response.json();
+            const posts = rawData.posts || rawData;
 
+            // Cache all posts by slug for safe retrieval
+            Object.keys(postsCache).forEach((k) => delete postsCache[k]);
+            (posts || []).forEach((p) => {
+              if (p.slug) postsCache[p.slug] = p;
+            });
+
+            postsList.innerHTML = "";
             if (!posts || posts.length === 0) {
-              postsList.innerHTML = '<div class="loading-msg">No posts yet</div>';
+              postsList.innerHTML =
+                '<div class="loading-msg">No posts yet</div>';
               return;
             }
 
-            postsList.innerHTML = "";
-            posts.forEach(post => {
+            posts.forEach((post) => {
+              const slug = post.slug || "";
               const postItem = document.createElement("div");
               postItem.className = "post-item";
-              postItem.innerHTML = `
-                <div class="post-item-title">${escapeHtml(post.title || "Untitled")}</div>
-                <div class="post-item-date">${post.date || "No date"}</div>
-              `;
-              postItem.onclick = () => openBlogPreviewModal(post);
+              postItem.dataset.slug = slug;
+
+              const titleEl = document.createElement("div");
+              titleEl.className = "post-item-title";
+              titleEl.textContent = post.title || "Untitled";
+
+              const metaEl = document.createElement("div");
+              metaEl.className = "post-item-date";
+              metaEl.textContent = `${post.date || "No date"} · ${slug}`;
+
+              const teaserEl = document.createElement("div");
+              teaserEl.style.cssText =
+                "font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:4px;";
+              const t = post.teaser || "";
+              teaserEl.textContent = t.length > 100 ? t.slice(0, 100) + "…" : t;
+
+              const editBtn = document.createElement("button");
+              editBtn.className = "btn-small";
+              editBtn.style.cssText = "font-size:11px;padding:6px 10px;";
+              editBtn.textContent = "✏️ Edit";
+              editBtn.addEventListener("click", () =>
+                openBlogPreviewModal(postsCache[slug] || post)
+              );
+
+              const delBtn = document.createElement("button");
+              delBtn.className = "btn-small-danger";
+              delBtn.style.fontSize = "11px";
+              delBtn.textContent = "🗑 Delete";
+              delBtn.addEventListener("click", () =>
+                quickDeletePost(slug, post.title || "this post")
+              );
+
+              const infoCol = document.createElement("div");
+              infoCol.append(titleEl, metaEl, teaserEl);
+
+              const btnRow = document.createElement("div");
+              btnRow.style.cssText = "display:flex;gap:8px;flex-shrink:0;";
+              btnRow.append(editBtn, delBtn);
+
+              const row = document.createElement("div");
+              row.style.cssText =
+                "display:flex;align-items:flex-start;justify-content:space-between;gap:12px;";
+              row.append(infoCol, btnRow);
+
+              postItem.appendChild(row);
               postsList.appendChild(postItem);
             });
           } catch (error) {
@@ -2437,9 +2981,37 @@ IMAGE: ${content.imagePath}`;
           }
         }
 
+        // ── POSTS HELPERS ──
+        function filterPosts(query) {
+          const q = query.toLowerCase();
+          document.querySelectorAll("#postsList .post-item").forEach((item) => {
+            const text = item.textContent.toLowerCase();
+            item.style.display = !q || text.includes(q) ? "block" : "none";
+          });
+        }
+
+        async function quickDeletePost(slug, title) {
+          if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
+          try {
+            const response = await fetch(`${API_BASE_URL}/api/posts/${slug}`, {
+              method: "DELETE",
+              headers: { Authorization: `Bearer ${adminPasscode}` },
+            });
+            if (!response.ok)
+              throw new Error(`Delete failed: ${response.status}`);
+            showToast("🗑 Post deleted");
+            loadPreviousPosts();
+          } catch (e) {
+            alert("Delete failed: " + e.message);
+          }
+        }
+
         // ── INITIALIZATION ──
         selectMode("smart");
-
+        // Set today's date in manual editor
+        document.getElementById("manualDate").value = new Date()
+          .toISOString()
+          .slice(0, 10);
       </script>
     </div>
     <!-- END MAIN CONTENT -->

@@ -114,7 +114,11 @@ class BlogPublisher:
         teaser     = post_data.get('teaser', '')
         sections   = post_data.get('sections', [])
         date_str   = post_data.get('date', datetime.now().strftime('%Y-%m-%d'))
-        image_path = post_data.get('image_path', '../assets/blog/placeholder.jpg')
+        raw_image  = post_data.get('image_path', '')
+        if raw_image and not raw_image.startswith(('/', '../', 'http')):
+            image_path = f'../assets/blog/{raw_image}'
+        else:
+            image_path = raw_image or '../assets/blog/placeholder.jpg'
         image_alt  = post_data.get('image_alt', f'Image for {title}')
 
         # Format date for display: 2026-02-17 → February 17, 2026
@@ -134,7 +138,6 @@ class BlogPublisher:
             sections_html += f'''
     <section class="section post-section">
         <div class="container">
-            <h2>{heading}</h2>
             {body_html}
         </div>
     </section>
@@ -146,16 +149,24 @@ class BlogPublisher:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="{seo}">
+    <meta property="og:title" content="{title} | Dr.WinMac">
+    <meta property="og:description" content="{seo}">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://drwinmac.tech/blog/{slug}.html">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="{title} | Dr.WinMac">
+    <meta name="twitter:description" content="{seo}">
     <title>{title} | Dr.WinMac</title>
+    <link rel="canonical" href="https://drwinmac.tech/blog/{slug}.html">
     <link rel="stylesheet" href="../styles.css">
 </head>
 <body>
 
     <!-- Navigation -->
     <nav class="nav">
-        <div class="container nav-inner">
-            <a href="/" class="nav-logo">Dr.WinMac</a>
-            <div class="nav-links">
+        <div class="container">
+            <a href="/" class="brand">Dr.WinMac</a>
+            <div class="navlinks">
                 <a href="/blog/">Blog</a>
                 <a href="/about.html">About</a>
                 <a href="/services.html">Services</a>
@@ -187,6 +198,13 @@ class BlogPublisher:
     <!-- Article Body -->
     {sections_html}
 
+    <!-- Closing Teaser -->
+    <section class="section post-closing">
+        <div class="container">
+            <p class="post-teaser-close">{teaser}</p>
+        </div>
+    </section>
+
     <!-- CTA -->
     <section class="section post-cta">
         <div class="container">
@@ -194,7 +212,7 @@ class BlogPublisher:
                 <h3>Making complex tech shifts clearer</h3>
                 <p>Dr.WinMac explores the infrastructure and automation changes
                    that affect everyone, explained without jargon.</p>
-                <a href="/blog/" class="btn btn-primary">Back to Blog</a>
+                <a href="/blog/" class="btn primary">Back to Blog</a>
             </div>
         </div>
     </section>
@@ -260,11 +278,14 @@ class BlogPublisher:
         """
         try:
             entry = {
-                'slug':   post_data.get('slug'),
-                'title':  post_data.get('title'),
-                'teaser': post_data.get('teaser'),
-                'date':   post_data.get('date', datetime.now().strftime('%Y-%m-%d')),
-                'seo':    post_data.get('seo')
+                'slug':       post_data.get('slug'),
+                'title':      post_data.get('title'),
+                'lead':       post_data.get('lead', ''),
+                'teaser':     post_data.get('teaser', ''),
+                'date':       post_data.get('date', datetime.now().strftime('%Y-%m-%d')),
+                'seo':        post_data.get('seo', ''),
+                'sections':   post_data.get('sections', []),
+                'image_path': post_data.get('image_path', ''),
             }
 
             # Upsert into metadata (replace if slug already exists)
@@ -298,6 +319,15 @@ class BlogPublisher:
             title = post.get('title', 'Untitled')
             date  = post.get('date', '')
             tease = post.get('teaser', '')
+            raw_img = post.get('image_path', '')
+
+            # Build image path
+            if raw_img and not raw_img.startswith(('/', '../', 'http')):
+                img_src = f'../assets/blog/{raw_img}'
+            elif raw_img:
+                img_src = raw_img
+            else:
+                img_src = ''
 
             # Format date for display
             try:
@@ -305,17 +335,24 @@ class BlogPublisher:
             except (ValueError, TypeError):
                 display_date = date
 
+            img_html = f'<div class="post-card-img" style="background-image:url({img_src})"></div>' if img_src else '<div class="post-card-img post-card-img--placeholder"></div>'
+
             cards_html += f'''
-    <article class="card solid">
-        <div class="card-meta">
-            <span class="card-date">{display_date}</span>
-            <span class="card-tag">Under the Radar Tech</span>
+    <article class="post-card">
+        <a href="/blog/{slug}.html" class="post-card-img-link">
+            {img_html}
+        </a>
+        <div class="post-card-body">
+            <h2 class="post-card-title">
+                <a href="/blog/{slug}.html">{title}</a>
+            </h2>
+            <p class="post-card-teaser">{tease}</p>
         </div>
-        <h2 class="card-title">
-            <a href="/blog/{slug}.html">{title}</a>
-        </h2>
-        <p class="card-teaser">{tease}</p>
-        <a href="/blog/{slug}.html" class="card-link">Read more &rarr;</a>
+        <div class="post-card-footer">
+            <span class="post-card-date">{display_date}</span>
+            <span class="post-card-cat">Under the Radar Tech</span>
+            <a href="/blog/{slug}.html" class="post-card-read">Read more &rarr;</a>
+        </div>
     </article>
 '''
 
@@ -328,17 +365,22 @@ class BlogPublisher:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Dr.WinMac blog — clear explanations of AI, automation, and infrastructure shifts.">
+    <meta property="og:title" content="Blog | Dr.WinMac">
+    <meta property="og:description" content="Under the Radar Tech — quiet shifts in AI, automation, and infrastructure explained without the hype.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://drwinmac.tech/blog/">
     <title>Blog | Dr.WinMac</title>
+    <link rel="canonical" href="https://drwinmac.tech/blog/">
     <link rel="stylesheet" href="../styles.css">
 </head>
 <body>
 
     <!-- Navigation -->
     <nav class="nav">
-        <div class="container nav-inner">
-            <a href="/" class="nav-logo">Dr.WinMac</a>
-            <div class="nav-links">
-                <a href="/blog/">Blog</a>
+        <div class="container">
+            <a href="/" class="brand">Dr.WinMac</a>
+            <div class="navlinks">
+                <a href="/blog/" class="active">Blog</a>
                 <a href="/about.html">About</a>
                 <a href="/services.html">Services</a>
             </div>
@@ -348,8 +390,9 @@ class BlogPublisher:
     <!-- Blog Header -->
     <section class="section blog-hero">
         <div class="container">
-            <h1>Under the Radar Tech</h1>
-            <p class="blog-subtitle">
+            <span class="kicker">Under the Radar Tech</span>
+            <h1 style="margin-top:16px;">The Blog</h1>
+            <p class="lead">
                 Quiet shifts in AI, automation, and infrastructure —
                 explained without the hype.
             </p>
@@ -357,7 +400,7 @@ class BlogPublisher:
     </section>
 
     <!-- Post Listing -->
-    <section class="section blog-listing">
+    <section class="section">
         <div class="container">
             <div class="card-grid">
                 {cards_html}
@@ -387,7 +430,7 @@ class BlogPublisher:
         posts = []
         try:
             for html_file in sorted(self.blog_path.glob('*.html'), reverse=True):
-                if html_file.name == 'index.html':
+                if html_file.name in ('index.html', 'blog_template.html'):
                     continue
                 slug = html_file.stem
                 # Prefer metadata entry, fall back to filename
