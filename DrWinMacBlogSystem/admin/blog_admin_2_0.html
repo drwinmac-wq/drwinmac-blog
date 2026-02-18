@@ -2718,12 +2718,18 @@ IMAGE: ${content.imagePath}`;
           // and label the image field so the user knows it will upload on Publish
           const previewThumb = document.getElementById("previewImageThumb");
           if (_pendingImageFile) {
-            document.getElementById("previewImage").value = "⏳ " + _pendingImageFile.name + " (uploads on Publish)";
+            document.getElementById("previewImage").value =
+              "⏳ " + _pendingImageFile.name + " (uploads on Publish)";
             previewThumb.src = URL.createObjectURL(_pendingImageFile);
             previewThumb.style.display = "block";
           } else if (postData.image_path || postData.imagePath) {
-            previewThumb.src = "";
-            previewThumb.style.display = "none";
+            // Show existing image so user knows one is already attached
+            const existingImg = postData.image_path || postData.imagePath;
+            const imgSrc = existingImg.startsWith('http') || existingImg.startsWith('/')
+              ? existingImg
+              : `https://drwinmac.tech/assets/blog/${existingImg}`;
+            previewThumb.src = imgSrc;
+            previewThumb.style.display = "block";
           } else {
             previewThumb.src = "";
             previewThumb.style.display = "none";
@@ -2833,7 +2839,9 @@ IMAGE: ${content.imagePath}`;
 
           // Upload image if a new file was chosen in the modal OR carried from Manual Editor.
           // Strip the display-label placeholder set by openBlogPreviewModal for pending files.
-          let rawImageField = document.getElementById("previewImage").value.trim();
+          let rawImageField = document
+            .getElementById("previewImage")
+            .value.trim();
           let imagePath = rawImageField.startsWith("⏳") ? "" : rawImageField;
           try {
             const uploaded = await uploadImageIfSelected(

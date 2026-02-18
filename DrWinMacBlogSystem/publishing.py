@@ -510,7 +510,7 @@ class BlogPublisher:
     <footer class="footer">
         <div class="container">
             <p>&copy; {datetime.now().year} Dr.WinMac. All rights reserved.</p>
-            <p style="margin-top:8px;"><a href="https://drwinmac-blog.onrender.com/admin/" style="font-size:11px;color:rgba(255,255,255,0.3);text-decoration:none;" target="_blank" rel="noopener">Admin</a></p>
+            <p style="margin-top:8px;"><a href="https://drwinmac-blog.onrender.com/admin/" style="font-size:12px;color:rgba(255,255,255,0.55);text-decoration:none;border:1px solid rgba(255,255,255,0.2);padding:4px 10px;border-radius:999px;" target="_blank" rel="noopener">⚙ Admin</a></p>
         </div>
     </footer>
     <script>
