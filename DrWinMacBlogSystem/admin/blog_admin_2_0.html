@@ -1880,7 +1880,7 @@ Modern AI data centers require massive electricity and significant water for coo
             </div>
 
             <div class="btn-row">
-              <button class="btn-primary" onclick="previewManualPost()">
+              <button class="btn-primary" onclick="publishFromManualEditor()">
                 👁 Preview &amp; Publish
               </button>
               <button class="btn-secondary" onclick="clearManualEditor()">
@@ -2112,8 +2112,9 @@ Modern AI data centers require massive electricity and significant water for coo
           // Check the explicit input first; fall back to the pending file carried
           // from the Manual Editor if the preview modal input is empty
           const fileInput = document.getElementById(fileInputId);
-          const file = (fileInput && fileInput.files && fileInput.files[0])
-            || _pendingImageFile;
+          const file =
+            (fileInput && fileInput.files && fileInput.files[0]) ||
+            _pendingImageFile;
           _pendingImageFile = null; // consume it either way
           if (!file) return null; // no file anywhere — keep existing value
 
@@ -2129,7 +2130,8 @@ Modern AI data centers require massive electricity and significant water for coo
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || res.status);
-          if (nameInputId) document.getElementById(nameInputId).value = data.filename;
+          if (nameInputId)
+            document.getElementById(nameInputId).value = data.filename;
           showToast("✓ Image uploaded: " + data.filename);
           return data.filename;
         }
@@ -2712,6 +2714,21 @@ IMAGE: ${content.imagePath}`;
           document.getElementById("previewImage").value =
             postData.image_path || postData.imagePath || "";
 
+          // If a file is queued from the Manual Editor, show a local preview
+          // and label the image field so the user knows it will upload on Publish
+          const previewThumb = document.getElementById("previewImageThumb");
+          if (_pendingImageFile) {
+            document.getElementById("previewImage").value = "⏳ " + _pendingImageFile.name + " (uploads on Publish)";
+            previewThumb.src = URL.createObjectURL(_pendingImageFile);
+            previewThumb.style.display = "block";
+          } else if (postData.image_path || postData.imagePath) {
+            previewThumb.src = "";
+            previewThumb.style.display = "none";
+          } else {
+            previewThumb.src = "";
+            previewThumb.style.display = "none";
+          }
+
           // Render sections
           const sectionsContainer = document.getElementById("previewSections");
           sectionsContainer.innerHTML = "";
@@ -2814,8 +2831,10 @@ IMAGE: ${content.imagePath}`;
           // Slug is locked-in from when the modal opened — use it for SEO image naming too
           const slug = currentEditingSlug || generateSlug(title);
 
-          // Upload image if a new file was chosen in the modal OR carried from Manual Editor
-          let imagePath = document.getElementById("previewImage").value.trim();
+          // Upload image if a new file was chosen in the modal OR carried from Manual Editor.
+          // Strip the display-label placeholder set by openBlogPreviewModal for pending files.
+          let rawImageField = document.getElementById("previewImage").value.trim();
+          let imagePath = rawImageField.startsWith("⏳") ? "" : rawImageField;
           try {
             const uploaded = await uploadImageIfSelected(
               "previewImageFile",
