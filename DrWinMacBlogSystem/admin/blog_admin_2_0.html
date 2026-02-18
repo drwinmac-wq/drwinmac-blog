@@ -1880,8 +1880,11 @@ Modern AI data centers require massive electricity and significant water for coo
             </div>
 
             <div class="btn-row">
-              <button class="btn-primary" onclick="publishFromManualEditor()">
-                👁 Preview &amp; Publish
+              <button class="btn-primary" style="flex:1" onclick="publishFromManualEditor()">
+                👁 Preview
+              </button>
+              <button class="btn-secondary" id="regenerateBtn" style="flex:1" onclick="regenerateManualPost()">
+                🔄 Regenerate
               </button>
               <button class="btn-secondary" onclick="clearManualEditor()">
                 Clear
@@ -1928,6 +1931,26 @@ Modern AI data centers require massive electricity and significant water for coo
       <!-- TOAST -->
       <div class="success-toast" id="toast" style="display: none">
         ✓ Expansion complete — preview emailed
+      </div>
+
+      <!-- READ-ONLY POST PREVIEW MODAL (Manual Editor → Preview button) -->
+      <div
+        class="modal-overlay"
+        id="readonlyPreviewModal"
+        onclick="closeReadonlyPreview(event)"
+      >
+        <div class="modal-content" style="max-width:720px;max-height:90vh;display:flex;flex-direction:column;" onclick="event.stopPropagation()">
+          <div class="modal-header">
+            <div class="modal-title">Post Preview</div>
+            <button class="modal-close" onclick="closeReadonlyPreview()">✕</button>
+          </div>
+          <div class="modal-body" id="readonlyPreviewBody" style="overflow-y:auto;padding:24px 28px;flex:1;">
+          </div>
+          <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeReadonlyPreview()">Cancel</button>
+            <button class="btn-primary" id="readonlyPublishBtn" onclick="publishFromReadonlyPreview()">📤 Publish</button>
+          </div>
+        </div>
       </div>
 
       <!-- BLOG PREVIEW MODAL -->
@@ -2705,7 +2728,187 @@ IMAGE: ${content.imagePath}`;
           if (fileInput && fileInput.files && fileInput.files[0]) {
             _pendingImageFile = fileInput.files[0];
           }
-          previewManualPost();
+          // Open the read-only preview modal instead of the edit modal
+          openReadonlyPreview();
+        }
+
+        // ── READ-ONLY PREVIEW MODAL ──
+
+        // Snapshot of postData used for publishing from the readonly preview
+        let _readonlyPostData = null;
+
+        function openReadonlyPreview() {
+          // Collect current manual editor state
+          const sections = [];
+          document.querySelectorAll("#manualSectionsInline .manual-section-editor").forEach((ed) => {
+            const h = ed.querySelector(".section-heading").value.trim();
+            const b = ed.querySelector(".section-body").value.trim();
+            if (h || b) sections.push({ heading: h, body: b });
+          });
+          const title = document.getElementById("manualTitle").value.trim() || "Untitled";
+          _readonlyPostData = {
+            title,
+            slug: document.getElementById("manualSlug").value || generateSlug(title),
+            lead: document.getElementById("manualLead").value.trim(),
+            seo: document.getElementById("manualSEO").value.trim(),
+            teaser: document.getElementById("manualTeaser").value.trim(),
+            image_path: document.getElementById("manualImage").value.trim(),
+            sections,
+            date: document.getElementById("manualDate").value || new Date().toISOString().slice(0, 10),
+          };
+
+          // Build read-only HTML
+          const imgSrc = _pendingImageFile
+            ? URL.createObjectURL(_pendingImageFile)
+            : (_readonlyPostData.image_path
+                ? ((_readonlyPostData.image_path.startsWith('http') || _readonlyPostData.image_path.startsWith('/'))
+                    ? _readonlyPostData.image_path
+                    : `https://drwinmac.tech/assets/blog/${_readonlyPostData.image_path}`)
+                : null);
+
+          let html = '';
+          if (imgSrc) {
+            html += `<img src="${imgSrc}" alt="" style="width:100%;max-height:340px;object-fit:cover;border-radius:10px;margin-bottom:20px;">`;
+          }
+          html += `<h2 style="font-size:22px;font-weight:800;margin:0 0 10px;line-height:1.25;">${escapeHtml(_readonlyPostData.title)}</h2>`;
+          html += `<p style="font-size:13px;color:var(--muted);margin-bottom:18px;">${_readonlyPostData.date}</p>`;
+          if (_readonlyPostData.lead) {
+            html += `<p style="font-style:italic;margin-bottom:20px;line-height:1.7;">${escapeHtml(_readonlyPostData.lead)}</p>`;
+          }
+          _readonlyPostData.sections.forEach((s) => {
+            if (s.heading) html += `<h3 style="font-size:15px;font-weight:700;color:#6ee7b7;margin:20px 0 8px;">${escapeHtml(s.heading)}</h3>`;
+            if (s.body) {
+              s.body.split('\n\n').filter(p => p.trim()).forEach(p => {
+                html += `<p style="margin-bottom:12px;line-height:1.7;">${escapeHtml(p.trim())}</p>`;
+              });
+            }
+          });
+          if (_readonlyPostData.teaser) {
+            html += `<p style="margin-top:24px;font-style:italic;color:var(--muted);border-top:1px solid var(--border);padding-top:16px;">${escapeHtml(_readonlyPostData.teaser)}</p>`;
+          }
+
+          document.getElementById("readonlyPreviewBody").innerHTML = html;
+          document.getElementById("readonlyPreviewModal").classList.add("active");
+        }
+
+        function closeReadonlyPreview(event) {
+          if (event && event.target.id !== "readonlyPreviewModal") return;
+          document.getElementById("readonlyPreviewModal").classList.remove("active");
+          _readonlyPostData = null;
+          _pendingImageFile = null;
+        }
+
+        async function publishFromReadonlyPreview() {
+          if (!_readonlyPostData) return;
+          const btn = document.getElementById("readonlyPublishBtn");
+          btn.disabled = true;
+          btn.textContent = "Publishing...";
+
+          try {
+            // Upload image if pending
+            let imagePath = _readonlyPostData.image_path;
+            const slug = _readonlyPostData.slug;
+            if (_pendingImageFile) {
+              const formData = new FormData();
+              formData.append("file", _pendingImageFile);
+              formData.append("title", slug);
+              const imgRes = await fetch(`${API_BASE_URL}/api/upload-image`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${adminPasscode}` },
+                body: formData,
+              });
+              const imgData = await imgRes.json();
+              if (!imgRes.ok) throw new Error(imgData.error || imgRes.status);
+              imagePath = imgData.filename;
+              _pendingImageFile = null;
+            }
+
+            const postData = { ..._readonlyPostData, image_path: imagePath };
+            const response = await fetch(`${API_BASE_URL}/api/publish`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${adminPasscode}`,
+              },
+              body: JSON.stringify(postData),
+            });
+            if (!response.ok) throw new Error(`Failed to publish: ${response.status}`);
+
+            showToast("✓ Post published successfully!");
+            document.getElementById("readonlyPreviewModal").classList.remove("active");
+            _readonlyPostData = null;
+            if (currentActiveTab === "previousPosts") loadPreviousPosts();
+          } catch (error) {
+            alert("Publish failed: " + error.message);
+          } finally {
+            btn.disabled = false;
+            btn.innerHTML = "📤 Publish";
+          }
+        }
+
+        // ── REGENERATE ──
+        async function regenerateManualPost() {
+          const btn = document.getElementById("regenerateBtn");
+          const title = document.getElementById("manualTitle").value.trim();
+          const lead = document.getElementById("manualLead").value.trim();
+          const teaser = document.getElementById("manualTeaser").value.trim();
+
+          const sections = [];
+          document.querySelectorAll("#manualSectionsInline .manual-section-editor").forEach((ed) => {
+            const h = ed.querySelector(".section-heading").value.trim();
+            const b = ed.querySelector(".section-body").value.trim();
+            if (h || b) sections.push({ heading: h, body: b });
+          });
+
+          if (!lead && sections.length === 0) {
+            alert("Nothing to regenerate — fill in the Lead and Sections first.");
+            return;
+          }
+
+          const model = document.getElementById("modelSelect")?.value || "gpt-4o";
+
+          btn.disabled = true;
+          btn.innerHTML = '<div class="loading-spinner" style="display:inline-block;width:14px;height:14px;margin-right:6px;"></div>Regenerating...';
+
+          try {
+            const response = await fetch(`${API_BASE_URL}/api/regenerate`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${adminPasscode}`,
+              },
+              body: JSON.stringify({ title, lead, sections, teaser, model }),
+            });
+
+            if (!response.ok) {
+              const err = await response.json();
+              throw new Error(err.error || response.status);
+            }
+
+            const refined = await response.json();
+
+            // Update Lead
+            document.getElementById("manualLead").value = refined.lead || lead;
+
+            // Update Teaser
+            document.getElementById("manualTeaser").value = refined.teaser || teaser;
+
+            // Update Sections — match by heading, fall back to index
+            const editors = document.querySelectorAll("#manualSectionsInline .manual-section-editor");
+            (refined.sections || []).forEach((sec, idx) => {
+              const editor = editors[idx];
+              if (editor) {
+                editor.querySelector(".section-body").value = sec.body || "";
+              }
+            });
+
+            showToast("✓ Content regenerated");
+          } catch (error) {
+            alert("Regenerate failed: " + error.message);
+          } finally {
+            btn.disabled = false;
+            btn.innerHTML = "🔄 Regenerate";
+          }
         }
 
         // ── BLOG PREVIEW MODAL ──

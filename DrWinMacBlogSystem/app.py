@@ -418,25 +418,89 @@ def api_publish():
 def api_preview():
     """
     Generate HTML preview of expanded content (without publishing)
-    
+
     Request: Same as /api/publish
     Response: { "html": "<html>..." }
     """
-    
+
     if not publisher:
         return jsonify({'error': 'Publisher not available'}), 503
-    
+
     try:
         data = request.json or {}
         html = publisher.generate_html(data)
-        
+
         return jsonify({
             'success': True,
             'html': html
         })
-    
+
     except Exception as e:
         logger.error(f"Preview generation failed: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/regenerate', methods=['POST'])
+@verify_passcode_expand
+def api_regenerate():
+    """
+    Refine existing Lead, Sections and Teaser through the voice profile.
+    Title, slug, SEO, date and image are not changed.
+
+    Request:
+    {
+        "title": "...",
+        "lead": "...",
+        "sections": [...],
+        "teaser": "...",
+        "model": "gpt-4o"   // optional
+    }
+
+    Response:
+    {
+        "success": true,
+        "lead": "...",
+        "sections": [...],
+        "teaser": "..."
+    }
+    """
+    if not engine:
+        return jsonify({'error': 'AI engine not available'}), 503
+
+    try:
+        data = request.json or {}
+        title   = (data.get('title') or '').strip()
+        lead    = (data.get('lead') or '').strip()
+        sections = data.get('sections') or []
+        teaser  = (data.get('teaser') or '').strip()
+        model   = data.get('model', 'gpt-4o')
+
+        if not lead and not sections:
+            return jsonify({'error': 'lead or sections required'}), 400
+
+        allowed_models = {'gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo'}
+        if model not in allowed_models:
+            model = 'gpt-4o'
+
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            refined = loop.run_until_complete(
+                engine.regenerate_content(title, lead, sections, teaser, model)
+            )
+        finally:
+            loop.close()
+
+        logger.info(f"✅ Regeneration successful for: {title!r}")
+        return jsonify({
+            'success': True,
+            'lead':     refined['lead'],
+            'sections': refined['sections'],
+            'teaser':   refined['teaser'],
+        })
+
+    except Exception as e:
+        logger.error(f"Regeneration failed: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/posts', methods=['GET'])

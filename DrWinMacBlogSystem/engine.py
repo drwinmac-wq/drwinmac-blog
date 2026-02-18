@@ -323,3 +323,80 @@ Expand this into a full blog post. Return only valid JSON."""
         slug = re.sub(r'\s+', '-', slug)
         slug = re.sub(r'-+', '-', slug)
         return slug.strip('-')[:60]
+
+    async def regenerate_content(self, title: str, lead: str, sections: list, teaser: str, model: str = 'gpt-4o') -> Dict:
+        """
+        Refine existing Lead, Sections and Teaser through the voice profile.
+        Title, slug, SEO, date and image are NOT touched.
+
+        Returns a dict with keys: lead, sections, teaser
+        """
+        logger.info(f"Regenerating content for: {title!r} with model {model}")
+
+        system_prompt = f"""You are an AI editor refining an existing Dr.WinMac blog post draft.
+
+{self.voice_profile}
+
+TASK:
+- Improve grammar, flow and clarity of the provided Lead, Sections and Teaser
+- Preserve the approximate length of each field — do NOT significantly expand or shorten
+- Keep the same section headings exactly as given
+- Maintain the Dr.WinMac voice throughout
+- Do NOT change the topic, meaning or key facts
+
+OUTPUT FORMAT — return valid JSON with these exact keys:
+{{
+    "lead": "refined lead paragraph",
+    "sections": [
+        {{"heading": "exact same heading", "body": "refined body text"}},
+        ...
+    ],
+    "teaser": "refined teaser sentence"
+}}"""
+
+        sections_text = '\n'.join(
+            f'Section "{s.get("heading", "")}": {s.get("body", "")}'
+            for s in sections
+        )
+
+        user_prompt = f"""TITLE (do not change): {title}
+
+LEAD:
+{lead}
+
+SECTIONS:
+{sections_text}
+
+TEASER:
+{teaser}
+
+Refine the above content. Return only valid JSON."""
+
+        try:
+            response = self.client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.5,
+                max_tokens=2500
+            )
+
+            raw_content = response.choices[0].message.content
+            if isinstance(raw_content, bytes):
+                raw_content = raw_content.decode('utf-8')
+            refined = json.loads(raw_content) if isinstance(raw_content, str) else raw_content
+
+            required = ['lead', 'sections', 'teaser']
+            missing = [f for f in required if f not in refined]
+            if missing:
+                raise ValueError(f"Missing fields from regenerate output: {', '.join(missing)}")
+
+            logger.info("Regeneration successful")
+            return refined
+
+        except Exception as e:
+            logger.error(f"Regeneration failed: {e}")
+            raise
