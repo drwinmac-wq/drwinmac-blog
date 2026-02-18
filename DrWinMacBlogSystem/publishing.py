@@ -570,22 +570,66 @@ class BlogPublisher:
             logger.error(f"Failed to list posts: {e}")
         return posts
 
+    def _github_delete(self, filepath: str, message: str) -> bool:
+        """Delete a file from GitHub via API."""
+        if not self.github_token:
+            logger.warning("GitHub token not configured — skipping GitHub delete")
+            return False
+        try:
+            url = f"{self.github_api}/repos/{self.github_repo}/contents/{filepath}"
+            headers = {
+                'Authorization': f'token {self.github_token}',
+                'Accept': 'application/vnd.github.v3+json'
+            }
+            # Must get the current SHA before deleting
+            resp = requests.get(url, headers=headers, timeout=10)
+            if resp.status_code == 404:
+                logger.info(f"File not found on GitHub (already gone): {filepath}")
+                return True
+            if resp.status_code != 200:
+                logger.warning(f"Could not fetch SHA for delete ({resp.status_code}): {filepath}")
+                return False
+            sha = resp.json().get('sha')
+            if not sha:
+                return False
+            data = {'message': message, 'sha': sha, 'branch': 'main'}
+            del_resp = requests.delete(url, json=data, headers=headers, timeout=10)
+            if del_resp.status_code == 200:
+                logger.info(f"✓ Deleted from GitHub: {filepath}")
+                return True
+            else:
+                logger.error(f"GitHub delete failed ({del_resp.status_code}): {del_resp.text[:200]}")
+                return False
+        except Exception as e:
+            logger.error(f"GitHub delete error: {e}")
+            return False
+
     def delete_post(self, slug: str) -> bool:
-        """Delete a post file and remove it from the index."""
+        """Delete a post file, remove it from the index, and commit changes to GitHub."""
         try:
             filepath = self.blog_path / f'{slug}.html'
-            if filepath.exists():
+            existed_locally = filepath.exists()
+            if existed_locally:
                 filepath.unlink()
-                self.metadata['posts'] = [
-                    p for p in self.metadata.get('posts', [])
-                    if p.get('slug') != slug
-                ]
-                self._save_metadata()
-                self._regenerate_index()
+
+            # Always update metadata and index regardless of local file presence,
+            # so a GitHub-only post is fully removed too
+            self.metadata['posts'] = [
+                p for p in self.metadata.get('posts', [])
+                if p.get('slug') != slug
+            ]
+            self._save_metadata()
+            self._regenerate_index()
+
+            # Delete the post HTML file from GitHub
+            self._github_delete(f'{self.blog_dir}/{slug}.html', f'Delete blog post: {slug}')
+
+            if existed_locally:
                 logger.info(f"Post deleted: {slug}")
                 return True
-            logger.warning(f"Post not found for deletion: {slug}")
-            return False
+            # Even if not found locally, we cleaned metadata — treat as success
+            logger.warning(f"Post HTML not found locally but metadata cleaned: {slug}")
+            return True
         except Exception as e:
             logger.error(f"Failed to delete post: {e}")
             return False

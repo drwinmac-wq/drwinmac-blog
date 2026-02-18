@@ -1862,15 +1862,8 @@ Modern AI data centers require massive electricity and significant water for coo
                   id="manualImageFile"
                   accept="image/*"
                   style="display: none"
-                  onchange="uploadImage('manualImageFile','manualImage','manualImageThumb')"
+                  onchange="previewLocalThumb('manualImageFile','manualImageThumb')"
                 />
-                <button
-                  class="btn-secondary"
-                  style="padding: 6px 12px; font-size: 12px"
-                  onclick="uploadImage('manualImageFile','manualImage','manualImageThumb')"
-                >
-                  Upload
-                </button>
               </div>
               <img
                 id="manualImageThumb"
@@ -2018,15 +2011,8 @@ Modern AI data centers require massive electricity and significant water for coo
                     id="previewImageFile"
                     accept="image/*"
                     style="display: none"
-                    onchange="uploadImage('previewImageFile','previewImage','previewImageThumb')"
+                    onchange="previewLocalThumb('previewImageFile','previewImageThumb')"
                   />
-                  <button
-                    class="btn-secondary"
-                    style="padding: 6px 12px; font-size: 12px"
-                    onclick="uploadImage('previewImageFile','previewImage','previewImageThumb')"
-                  >
-                    Upload
-                  </button>
                 </div>
                 <img
                   id="previewImageThumb"
@@ -2104,40 +2090,39 @@ Modern AI data centers require massive electricity and significant water for coo
         let expandedContent = null;
 
         // ── IMAGE UPLOAD ──
-        async function uploadImage(fileInputId, nameInputId, thumbId) {
+        // Shows a local thumb preview immediately when a file is chosen
+        function previewLocalThumb(fileInputId, thumbId) {
+          const file = document.getElementById(fileInputId).files[0];
+          if (!file) return;
+          const thumb = document.getElementById(thumbId);
+          thumb.src = URL.createObjectURL(file);
+          thumb.style.display = "block";
+        }
+
+        // Uploads file to API and returns the saved filename, or null on cancel/error
+        async function uploadImageIfSelected(
+          fileInputId,
+          nameInputId,
+          titleHint
+        ) {
           const fileInput = document.getElementById(fileInputId);
           const file = fileInput.files && fileInput.files[0];
-          if (!file) {
-            alert("Please choose a file first.");
-            return;
-          }
-
-          // Try to grab the current post title for SEO naming
-          const titleEl =
-            document.getElementById("previewTitle") ||
-            document.getElementById("manualTitle");
-          const title = titleEl ? titleEl.value.trim() : "";
+          if (!file) return null; // no new file chosen — keep existing value
 
           const formData = new FormData();
           formData.append("file", file);
-          if (title) formData.append("title", title);
+          if (titleHint) formData.append("title", titleHint);
 
-          try {
-            const res = await fetch(`${API_BASE_URL}/api/upload-image`, {
-              method: "POST",
-              headers: { Authorization: `Bearer ${adminPasscode}` },
-              body: formData,
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || res.status);
-            document.getElementById(nameInputId).value = data.filename;
-            const thumb = document.getElementById(thumbId);
-            thumb.src = URL.createObjectURL(file);
-            thumb.style.display = "block";
-            showToast("✓ Uploaded: " + data.filename);
-          } catch (err) {
-            alert("Image upload failed: " + err.message);
-          }
+          const res = await fetch(`${API_BASE_URL}/api/upload-image`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${adminPasscode}` },
+            body: formData,
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || res.status);
+          document.getElementById(nameInputId).value = data.filename;
+          showToast("✓ Image uploaded: " + data.filename);
+          return data.filename;
         }
 
         // ── MODEL SELECTOR ──
@@ -2695,6 +2680,18 @@ IMAGE: ${content.imagePath}`;
         }
 
         async function publishFromManualEditor() {
+          // Upload image first if a new file was chosen
+          const title = document.getElementById("manualTitle").value.trim();
+          try {
+            await uploadImageIfSelected(
+              "manualImageFile",
+              "manualImage",
+              title
+            );
+          } catch (err) {
+            alert("Image upload failed: " + err.message);
+            return;
+          }
           previewManualPost();
         }
 
@@ -2808,6 +2805,22 @@ IMAGE: ${content.imagePath}`;
         }
 
         async function publishFromPreviewModal() {
+          const title = document.getElementById("previewTitle").value.trim();
+
+          // Upload image first if a new file was chosen; otherwise keep existing filename
+          let imagePath = document.getElementById("previewImage").value.trim();
+          try {
+            const uploaded = await uploadImageIfSelected(
+              "previewImageFile",
+              "previewImage",
+              title
+            );
+            if (uploaded) imagePath = uploaded;
+          } catch (err) {
+            alert("Image upload failed: " + err.message);
+            return;
+          }
+
           const sections = [];
           document
             .querySelectorAll("#previewSections .section-editor")
@@ -2819,17 +2832,17 @@ IMAGE: ${content.imagePath}`;
               }
             });
 
+          // Use the locked-in slug from when the modal was opened — never regenerate
+          const slug = currentEditingSlug || generateSlug(title);
+
           const postData = {
-            title: document.getElementById("previewTitle").value || "Untitled",
-            slug:
-              currentEditingSlug ||
-              generateSlug(document.getElementById("previewTitle").value),
+            title: title || "Untitled",
+            slug,
             lead: document.getElementById("previewLead").value || "",
             seo: document.getElementById("previewSEO").value || "",
             teaser: document.getElementById("previewTeaser").value || "",
-            image_path:
-              document.getElementById("previewImage").value.trim() || "",
-            sections: sections,
+            image_path: imagePath,
+            sections,
             date: new Date().toISOString().slice(0, 10),
           };
 
@@ -2850,6 +2863,8 @@ IMAGE: ${content.imagePath}`;
             showToast("✓ Post published successfully!");
             closeBlogPreviewModal();
             currentEditingSlug = null;
+            // Refresh the post list if we're on the Previous Posts tab
+            if (currentActiveTab === "previousPosts") loadPreviousPosts();
           } catch (error) {
             alert("Publish failed: " + error.message);
           }
