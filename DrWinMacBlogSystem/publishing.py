@@ -544,31 +544,13 @@ class BlogPublisher:
     # ── Post listing ─────────────────────────────────────────────────────────
 
     def list_posts(self) -> List[Dict]:
-        """Return list of all known posts, newest first."""
-        posts = []
-        try:
-            for html_file in sorted(self.blog_path.glob('*.html'), reverse=True):
-                if html_file.name in ('index.html', 'blog_template.html'):
-                    continue
-                slug = html_file.stem
-                # Prefer metadata entry, fall back to filename
-                meta = next(
-                    (p for p in self.metadata.get('posts', []) if p.get('slug') == slug),
-                    None
-                )
-                if meta:
-                    posts.append(meta)
-                else:
-                    posts.append({
-                        'slug':  slug,
-                        'title': slug.replace('-', ' ').title(),
-                        'date':  datetime.fromtimestamp(
-                            html_file.stat().st_mtime
-                        ).strftime('%Y-%m-%d')
-                    })
-        except Exception as e:
-            logger.error(f"Failed to list posts: {e}")
-        return posts
+        """Return only metadata-backed posts, newest first.
+
+        Intentionally does NOT fall back to scanning the filesystem.
+        Any .html file without a metadata entry is an orphan (e.g. a
+        partially-deleted post) and must not reappear in the admin list.
+        """
+        return list(self.metadata.get('posts', []))
 
     def _github_delete(self, filepath: str, message: str) -> bool:
         """Delete a file from GitHub via API."""
@@ -605,30 +587,57 @@ class BlogPublisher:
             return False
 
     def delete_post(self, slug: str) -> bool:
-        """Delete a post file, remove it from the index, and commit changes to GitHub."""
+        """Delete a post: HTML file, image, metadata entry, index — locally and on GitHub."""
         try:
-            filepath = self.blog_path / f'{slug}.html'
-            existed_locally = filepath.exists()
-            if existed_locally:
-                filepath.unlink()
+            # ── 1. Grab image filename from metadata BEFORE we remove the entry ──
+            post_meta = next(
+                (p for p in self.metadata.get('posts', []) if p.get('slug') == slug),
+                None
+            )
+            image_filename = (post_meta or {}).get('image_path', '').strip()
+            # Normalise: strip any path prefix, keep only the bare filename
+            if image_filename:
+                image_filename = Path(image_filename).name
 
-            # Always update metadata and index regardless of local file presence,
-            # so a GitHub-only post is fully removed too
+            # ── 2. Delete the post HTML locally ──
+            html_path = self.blog_path / f'{slug}.html'
+            if html_path.exists():
+                html_path.unlink()
+                logger.info(f"Deleted local HTML: {html_path}")
+
+            # ── 3. Delete the image locally (assets/blog/<filename>) ──
+            if image_filename:
+                # blog_path is ../blog; assets/blog is a sibling of blog/
+                assets_dir = self.blog_path.parent / 'assets' / 'blog'
+                img_path = assets_dir / image_filename
+                if img_path.exists():
+                    img_path.unlink()
+                    logger.info(f"Deleted local image: {img_path}")
+                else:
+                    logger.info(f"Image not found locally (may already be gone): {img_path}")
+
+            # ── 4. Remove from metadata and regenerate index ──
             self.metadata['posts'] = [
                 p for p in self.metadata.get('posts', [])
                 if p.get('slug') != slug
             ]
             self._save_metadata()
-            self._regenerate_index()
+            self._regenerate_index()  # also commits index.html + metadata.json to GitHub
 
-            # Delete the post HTML file from GitHub
-            self._github_delete(f'{self.blog_dir}/{slug}.html', f'Delete blog post: {slug}')
+            # ── 5. Delete post HTML from GitHub ──
+            self._github_delete(
+                f'{self.blog_dir}/{slug}.html',
+                f'Delete blog post: {slug}'
+            )
 
-            if existed_locally:
-                logger.info(f"Post deleted: {slug}")
-                return True
-            # Even if not found locally, we cleaned metadata — treat as success
-            logger.warning(f"Post HTML not found locally but metadata cleaned: {slug}")
+            # ── 6. Delete image from GitHub ──
+            if image_filename:
+                self._github_delete(
+                    f'assets/blog/{image_filename}',
+                    f'Delete image for post: {slug}'
+                )
+
+            logger.info(f"Post fully deleted: {slug}")
             return True
         except Exception as e:
             logger.error(f"Failed to delete post: {e}")
