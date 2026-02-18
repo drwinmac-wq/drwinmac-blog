@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dr.WinMac Blog Admin — Login</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .login-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        width: 100%;
+        max-width: 420px;
+        padding: 40px;
+      }
+
+      .logo {
+        text-align: center;
+        margin-bottom: 32px;
+      }
+
+      .logo-dot {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        background: #667eea;
+        border-radius: 50%;
+        margin-right: 8px;
+      }
+
+      .logo-text {
+        font-size: 24px;
+        font-weight: 600;
+        color: #1a202c;
+      }
+
+      .logo-subtitle {
+        font-size: 12px;
+        color: #718096;
+        margin-top: 8px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      h1 {
+        font-size: 28px;
+        color: #1a202c;
+        margin-bottom: 8px;
+        font-weight: 600;
+      }
+
+      .subtitle {
+        color: #718096;
+        font-size: 14px;
+        margin-bottom: 32px;
+      }
+
+      .form-group {
+        margin-bottom: 24px;
+      }
+
+      label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 8px;
+      }
+
+      input[type="password"] {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        font-family: inherit;
+      }
+
+      input[type="password"]:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+
+      input[type="password"]::placeholder {
+        color: #cbd5e0;
+      }
+
+      .btn {
+        width: 100%;
+        padding: 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+      }
+
+      .btn:active {
+        transform: translateY(0);
+      }
+
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .error {
+        display: none;
+        background: #fed7d7;
+        color: #c53030;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 13px;
+        border-left: 4px solid #c53030;
+      }
+
+      .error.show {
+        display: block;
+      }
+
+      .success {
+        display: none;
+        background: #c6f6d5;
+        color: #22543d;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 13px;
+        border-left: 4px solid #22543d;
+      }
+
+      .success.show {
+        display: block;
+      }
+
+      .info {
+        background: #f0f4ff;
+        color: #4c51bf;
+        padding: 16px;
+        border-radius: 8px;
+        font-size: 12px;
+        line-height: 1.6;
+        margin-top: 24px;
+        border-left: 4px solid #667eea;
+      }
+
+      .loading {
+        display: none;
+        text-align: center;
+        padding: 8px 0;
+      }
+
+      .spinner {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(102, 126, 234, 0.2);
+        border-top-color: #667eea;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-right: 8px;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .loading.show {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      // Configuration: Set API base URL
+      // For development (Live Server or local files), point to Flask dev server
+      const API_BASE_URL =
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        window.location.port === "5500"
+          ? "http://localhost:5000"
+          : window.location.protocol +
+            "//" +
+            window.location.hostname +
+            (window.location.port ? ":" + window.location.port : "");
+    </script>
+    <div class="login-container">
+      <div class="logo">
+        <div>
+          <span class="logo-dot"></span><span class="logo-text">Dr.WinMac</span>
+        </div>
+        <div class="logo-subtitle">Blog Admin</div>
+      </div>
+
+      <h1>Welcome Back</h1>
+      <p class="subtitle">
+        Enter your passcode to access the blog publishing system
+      </p>
+
+      <div class="error" id="error-message"></div>
+      <div class="success" id="success-message"></div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="passcode">Admin Passcode</label>
+          <input
+            type="password"
+            id="passcode"
+            name="passcode"
+            placeholder="Enter passcode"
+            required
+            autocomplete="current-password"
+          />
+        </div>
+
+        <button type="submit" class="btn" id="submit-btn">
+          Unlock Admin Panel
+        </button>
+
+        <div class="loading" id="loading">
+          <span class="spinner"></span>Authenticating...
+        </div>
+      </form>
+
+      <div class="info">
+        <strong>💡 Note:</strong> This passcode-protected interface controls all
+        automated blog publishing. Keep your passcode secure.
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById("login-form");
+      const passcodeInput = document.getElementById("passcode");
+      const submitBtn = document.getElementById("submit-btn");
+      const errorMsg = document.getElementById("error-message");
+      const successMsg = document.getElementById("success-message");
+      const loading = document.getElementById("loading");
+
+      // Store passcode in session storage on successful login
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const passcode = passcodeInput.value.trim();
+
+        if (!passcode) {
+          showError("Please enter a passcode");
+          return;
+        }
+
+        // Clear previous messages
+        clearMessages();
+        loading.classList.add("show");
+        submitBtn.disabled = true;
+
+        try {
+          // Verify passcode by making a test API call
+          const response = await fetch(`${API_BASE_URL}/api/status`, {
+            headers: {
+              Authorization: `Bearer ${passcode}`,
+            },
+          });
+
+          if (response.ok) {
+            // Store passcode in session storage
+            sessionStorage.setItem("drwinmac_admin_passcode", passcode);
+
+            showSuccess("Authentication successful! Redirecting...");
+
+            // Redirect to admin panel after brief delay
+            setTimeout(() => {
+              window.location.href = "admin-dashboard.html";
+            }, 800);
+          } else {
+            showError("Invalid passcode. Please try again.");
+          }
+        } catch (error) {
+          showError("Connection error. Please check your network.");
+          console.error("Auth error:", error);
+        } finally {
+          loading.classList.remove("show");
+          submitBtn.disabled = false;
+        }
+      });
+
+      function showError(message) {
+        errorMsg.textContent = message;
+        errorMsg.classList.add("show");
+      }
+
+      function showSuccess(message) {
+        successMsg.textContent = message;
+        successMsg.classList.add("show");
+      }
+
+      function clearMessages() {
+        errorMsg.classList.remove("show");
+        successMsg.classList.remove("show");
+      }
+
+      // Focus on passcode input on load
+      passcodeInput.focus();
+    </script>
+  </body>
+</html>

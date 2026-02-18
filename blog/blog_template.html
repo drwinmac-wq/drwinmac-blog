@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>POST TITLE | Dr.WinMac</title>
+    <meta
+      name="description"
+      content="1–2 sentence SEO summary of this article."
+    />
+
+    <link rel="stylesheet" href="../styles.css?v=20251220202331" />
+  </head>
+
+  <body class="fun">
+    <!-- Top Nav -->
+    <div class="topbar">
+      <div class="container">
+        <div class="nav">
+          <a class="brand" href="../index.html" aria-label="Dr.WinMac Home">
+            <span class="brand-dot"></span>
+            <span>Dr.WinMac</span>
+          </a>
+
+          <button class="nav-toggle" type="button" aria-label="Menu"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Article -->
+    <section class="section">
+      <div class="container" style="max-width: 760px">
+        <div class="kicker">Under the Radar Tech</div>
+
+        <h1>Post Title Goes Here</h1>
+
+        <p class="lead">
+          Clear, grounded opening that explains the shift without hype.
+        </p>
+
+        <!-- Featured Image -->
+        <img
+          src="../assets/blog/your-image.jpg"
+          alt="Describe the image clearly for SEO"
+          style="margin: 20px 0; border-radius: 18px"
+        />
+
+        <!-- Section 1: The Overlooked Reality -->
+        <h2>The Part Most People Aren’t Watching</h2>
+        <p>
+          Start with the quiet angle. Explain what’s happening behind the scenes
+          in plain language. Keep it conversational, structured, and human.
+        </p>
+
+        <!-- Section 2: Deeper Context -->
+        <h2>What’s Actually Changing</h2>
+        <p>
+          Break down the infrastructure, technology, or system shift. Focus on
+          clarity over cleverness. No hype. No jargon overload.
+        </p>
+
+        <!-- Section 3: Flexible Impact Lens (changes weekly) -->
+        <h2>Why This Actually Matters</h2>
+        <p>
+          This section changes depending on the topic. Some weeks it may be
+          environmental impact. Other weeks it may be societal, personal, or
+          industry-level implications. Keep it grounded and relevant to real
+          people, not just businesses.
+        </p>
+
+        <!-- Section 4: Forward Look -->
+        <h2>Where This Quietly Leads</h2>
+        <p>
+          Offer a calm, realistic forward view. Avoid predictions framed as
+          certainty. Focus on trajectory, not hype.
+        </p>
+
+        <!-- Optional Call To Action (can be removed anytime) -->
+        <div class="card solid" style="margin-top: 30px">
+          <h3>Exploring tech without the hype</h3>
+          <p class="small">
+            This blog exists to make complex shifts in AI, tech, and automation
+            easier to understand for everyday readers.
+          </p>
+
+          <a
+            class="btn primary"
+            href="/blog/index.html"
+          >
+            Back to Blog
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <p class="small">© <span id="y"></span> Dr.WinMac • Denver, CO</p>
+      </div>
+    </footer>
+
+    <script>
+      document.getElementById("y").textContent = new Date().getFullYear();
+    </script>
+
+    <div id="global-menu" style="display: none">
+      <a href="../index.html">Home</a>
+      <a href="../services.html">Services</a>
+      <a href="../about.html">About</a>
+      <a href="../ai-curriculum.html">AI Curriculum</a>
+      <a href="/blog/index.html">Blog</a>
+      <a href="../index.html#contact">Contact</a>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        var btn = document.querySelector(".nav-toggle");
+        var menu = document.getElementById("global-menu");
+        if (!btn || !menu) return;
+
+        btn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          var open = menu.style.display === "flex";
+          menu.style.display = open ? "none" : "flex";
+          btn.style.transform = open ? "rotate(0deg)" : "rotate(90deg)";
+        });
+
+        document.addEventListener("click", function () {
+          menu.style.display = "none";
+          btn.style.transform = "rotate(0deg)";
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1716 @@
+<!DOCTYPE html>
+<!-- saved from url=(0022)http://localhost:5000/ -->
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dr.WinMac — Blog Admin 2.0</title>
+    <script>
+      // Configuration: Set API base URL
+      // Detect Live Server / local dev and route API calls to Flask dev server
+      const API_BASE_URL =
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        window.location.port === "5500"
+          ? "http://localhost:5000"
+          : window.location.protocol +
+            "//" +
+            window.location.hostname +
+            (window.location.port ? ":" + window.location.port : "");
+
+      // Authentication state
+      let adminPasscode = localStorage.getItem("drwinmac_admin_passcode");
+      let isAuthenticated = false;
+
+      // Check auth on load
+      window.addEventListener("DOMContentLoaded", () => {
+        if (!adminPasscode) {
+          showLoginModal();
+        } else {
+          isAuthenticated = true;
+          hideLoginModal();
+        }
+      });
+
+      function showLoginModal() {
+        document.getElementById("loginModal").style.display = "flex";
+        document.getElementById("mainContent").style.display = "none";
+      }
+
+      function hideLoginModal() {
+        document.getElementById("loginModal").style.display = "none";
+        document.getElementById("mainContent").style.display = "flex";
+      }
+
+      function submitLogin() {
+        const passcode = document.getElementById("passcodeInput").value.trim();
+        if (passcode) {
+          localStorage.setItem("drwinmac_admin_passcode", passcode);
+          adminPasscode = passcode;
+          isAuthenticated = true;
+          hideLoginModal();
+        } else {
+          alert("Please enter a passcode");
+        }
+      }
+
+      function handleLoginKeypress(e) {
+        if (e.key === "Enter") {
+          submitLogin();
+        }
+      }
+
+      function logout() {
+        localStorage.removeItem("drwinmac_admin_passcode");
+        adminPasscode = null;
+        isAuthenticated = false;
+        showLoginModal();
+      }
+    </script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@400;600;700;800&display=swap");
+
+      :root {
+        --royal: #023879;
+        --ember: #e02c13;
+        --wine: #83142f;
+        --ink: #0a0f1e;
+        --surface: #0f1623;
+        --panel: #141c2e;
+        --border: rgba(255, 255, 255, 0.07);
+        --text: #e8ecf4;
+        --muted: rgba(232, 236, 244, 0.5);
+        --accent: #2563eb;
+        --accent-glow: rgba(37, 99, 235, 0.35);
+        --success: #10b981;
+        --success-glow: rgba(16, 185, 129, 0.3);
+        --warning: #f59e0b;
+        --warning-glow: rgba(245, 158, 11, 0.3);
+        --mono: "DM Mono", monospace;
+        --sans: "Sora", sans-serif;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        height: 100%;
+        background: var(--ink);
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 15px;
+        line-height: 1.6;
+      }
+
+      body {
+        background: radial-gradient(
+            ellipse 800px 500px at 10% 0%,
+            rgba(37, 99, 235, 0.12),
+            transparent 60%
+          ),
+          radial-gradient(
+            ellipse 600px 400px at 90% 80%,
+            rgba(131, 20, 47, 0.1),
+            transparent 60%
+          ),
+          var(--ink);
+        min-height: 100vh;
+      }
+
+      /* ── TOPBAR ── */
+      .topbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 28px;
+        height: 58px;
+        background: rgba(10, 15, 30, 0.85);
+        backdrop-filter: blur(14px);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 800;
+        font-size: 15px;
+        letter-spacing: -0.02em;
+      }
+
+      .brand-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent), var(--ember));
+        box-shadow: 0 0 10px var(--accent-glow);
+      }
+
+      .badge {
+        padding: 3px 12px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        font-family: var(--mono);
+        background: rgba(245, 158, 11, 0.15);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        color: #fbbf24;
+        letter-spacing: 0.04em;
+      }
+
+      /* ── LAYOUT ── */
+      .layout {
+        display: grid;
+        grid-template-columns: 300px 1fr 360px;
+        gap: 0;
+        min-height: 100vh;
+        padding-top: 58px;
+      }
+
+      /* ── SIDEBAR ── */
+      .sidebar {
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        padding: 28px 20px;
+        position: sticky;
+        top: 58px;
+        height: calc(100vh - 58px);
+        overflow-y: auto;
+      }
+
+      .sidebar-label {
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 12px;
+        padding-left: 4px;
+      }
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 12px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--muted);
+        cursor: pointer;
+        transition: all 0.15s;
+        margin-bottom: 2px;
+        border: 1px solid transparent;
+      }
+
+      .nav-item:hover {
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+      }
+      .nav-item.active {
+        background: rgba(37, 99, 235, 0.12);
+        border-color: rgba(37, 99, 235, 0.25);
+        color: #93c5fd;
+      }
+
+      .nav-icon {
+        width: 16px;
+        height: 16px;
+        opacity: 0.7;
+        flex-shrink: 0;
+      }
+
+      .sidebar-sep {
+        height: 1px;
+        background: var(--border);
+        margin: 20px 0;
+      }
+
+      .stat-block {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px;
+        margin-bottom: 10px;
+      }
+
+      .stat-label {
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+
+      .stat-value {
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--text);
+      }
+
+      .stat-sub {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+
+      /* ── MAIN FORM ── */
+      .main {
+        padding: 32px 36px;
+        overflow-y: auto;
+      }
+
+      .page-title {
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: -0.025em;
+        margin-bottom: 4px;
+      }
+
+      .page-sub {
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 28px;
+      }
+
+      .mode-selector {
+        display: flex;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 4px;
+        margin-bottom: 28px;
+        gap: 4px;
+      }
+
+      .mode-btn {
+        flex: 1;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        font-family: var(--mono);
+        background: transparent;
+        border: none;
+        color: var(--muted);
+        cursor: pointer;
+        transition: all 0.15s;
+        text-align: center;
+      }
+
+      .mode-btn.active {
+        background: rgba(37, 99, 235, 0.15);
+        color: #93c5fd;
+        border: 1px solid rgba(37, 99, 235, 0.25);
+      }
+
+      .mode-btn:hover:not(.active) {
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+      }
+
+      .mode-description {
+        font-size: 11px;
+        color: rgba(232, 236, 244, 0.4);
+        margin-bottom: 20px;
+        text-align: center;
+        font-family: var(--mono);
+      }
+
+      /* ── INPUT SECTION ── */
+      .input-section {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 28px;
+      }
+
+      .input-label {
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .input-icon {
+        width: 14px;
+        height: 14px;
+        opacity: 0.6;
+      }
+
+      .short-post-input {
+        width: 100%;
+        min-height: 300px;
+        background: rgba(10, 15, 30, 0.6);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 16px;
+        color: var(--text);
+        font-family: var(--mono);
+        font-size: 13px;
+        line-height: 1.65;
+        resize: vertical;
+        outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+
+      .short-post-input:focus {
+        border-color: rgba(37, 99, 235, 0.5);
+        box-shadow: 0 0 0 3px var(--accent-glow);
+      }
+
+      .short-post-input::placeholder {
+        color: rgba(232, 236, 244, 0.25);
+      }
+
+      /* ── EXPAND SECTION ── */
+      .expand-section {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 28px;
+      }
+
+      .expand-options {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .expand-option {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .expand-option:hover {
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .expand-option.active {
+        background: rgba(37, 99, 235, 0.1);
+        border-color: rgba(37, 99, 235, 0.3);
+      }
+
+      .expand-option-label {
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 4px;
+        color: var(--text);
+      }
+
+      .expand-option-desc {
+        font-size: 10px;
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+
+      /* ── RESEARCH STATUS ── */
+      .research-status {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px;
+        margin-bottom: 20px;
+        display: none;
+      }
+
+      .research-status.active {
+        display: block;
+      }
+
+      .research-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 0;
+        font-size: 11px;
+        font-family: var(--mono);
+      }
+
+      .research-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--muted);
+        flex-shrink: 0;
+      }
+
+      .research-dot.active {
+        background: var(--warning);
+        box-shadow: 0 0 6px var(--warning-glow);
+        animation: pulse 2s infinite;
+      }
+
+      .research-dot.done {
+        background: var(--success);
+        box-shadow: 0 0 6px var(--success-glow);
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.4;
+        }
+      }
+
+      /* ── BUTTONS ── */
+      .btn-row {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+      }
+
+      .btn-primary {
+        flex: 1;
+        padding: 13px 20px;
+        background: linear-gradient(135deg, var(--accent), #1d4ed8);
+        border: none;
+        border-radius: 10px;
+        color: #fff;
+        font-family: var(--sans);
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 8px 24px rgba(37, 99, 235, 0.3);
+        letter-spacing: -0.01em;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 32px rgba(37, 99, 235, 0.45);
+      }
+
+      .btn-primary:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .btn-secondary {
+        padding: 13px 18px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        color: var(--muted);
+        font-family: var(--sans);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text);
+      }
+
+      .btn-warning {
+        padding: 13px 18px;
+        background: rgba(245, 158, 11, 0.12);
+        border: 1px solid rgba(245, 158, 11, 0.25);
+        border-radius: 10px;
+        color: #fbbf24;
+        font-family: var(--sans);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .btn-warning:hover {
+        background: rgba(245, 158, 11, 0.18);
+      }
+
+      /* ── LOADING STATES ── */
+      .loading-spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top: 2px solid #fff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 8px;
+      }
+
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* ── PREVIEW PANEL ── */
+      .preview-panel {
+        background: var(--surface);
+        border-left: 1px solid var(--border);
+        position: sticky;
+        top: 58px;
+        height: calc(100vh - 58px);
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .preview-header {
+        padding: 20px 20px 14px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .preview-title-bar {
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .preview-body {
+        flex: 1;
+        padding: 16px;
+        overflow-y: auto;
+      }
+
+      .placeholder-msg {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        min-height: 300px;
+        text-align: center;
+        color: var(--muted);
+        gap: 12px;
+      }
+
+      .placeholder-icon {
+        font-size: 36px;
+        opacity: 0.4;
+      }
+
+      .placeholder-text {
+        font-size: 13px;
+        font-family: var(--mono);
+      }
+
+      .preview-content {
+        font-family: var(--mono);
+        font-size: 11px;
+        line-height: 1.65;
+        color: #93c5fd;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+
+      /* ── EMAIL STATUS ── */
+      .email-status {
+        background: var(--panel);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 20px;
+        display: none;
+      }
+
+      .email-status.active {
+        display: block;
+      }
+
+      .email-status-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+
+      .email-icon {
+        width: 16px;
+        height: 16px;
+        color: #6ee7b7;
+      }
+
+      .email-status-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #6ee7b7;
+        font-family: var(--mono);
+      }
+
+      .email-status-text {
+        font-size: 11px;
+        color: var(--muted);
+        font-family: var(--mono);
+        line-height: 1.6;
+      }
+
+      /* ── SUCCESS TOAST ── */
+      .success-toast {
+        position: fixed;
+        bottom: 28px;
+        right: 28px;
+        background: rgba(16, 185, 129, 0.15);
+        border: 1px solid rgba(16, 185, 129, 0.4);
+        border-radius: 10px;
+        padding: 14px 18px;
+        font-size: 13px;
+        font-family: var(--mono);
+        color: #6ee7b7;
+        box-shadow: 0 8px 32px rgba(16, 185, 129, 0.15);
+        display: none;
+        z-index: 1000;
+        backdrop-filter: blur(10px);
+        animation: slideIn 0.25s ease;
+      }
+
+      @keyframes slideIn {
+        from {
+          transform: translateY(10px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      /* ── RESPONSIVE ── */
+      @media (max-width: 1200px) {
+        .layout {
+          grid-template-columns: 260px 1fr;
+        }
+        .preview-panel {
+          display: none;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+        .sidebar {
+          display: none;
+        }
+        .main {
+          padding: 20px;
+        }
+        .expand-options {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ── SCROLLBAR ── */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- LOGIN MODAL -->
+    <div
+      id="loginModal"
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(10, 15, 30, 0.95);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        backdrop-filter: blur(4px);
+      "
+    >
+      <div
+        style="
+          background: var(--panel);
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          padding: 40px;
+          width: 100%;
+          max-width: 360px;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        "
+      >
+        <div style="text-align: center; margin-bottom: 32px">
+          <div
+            style="
+              font-size: 32px;
+              font-weight: 800;
+              letter-spacing: -0.02em;
+              margin-bottom: 8px;
+            "
+          >
+            Dr.WinMac
+          </div>
+          <div
+            style="
+              font-size: 13px;
+              color: var(--muted);
+              font-family: var(--mono);
+            "
+          >
+            Blog Admin 2.0
+          </div>
+        </div>
+
+        <div style="margin-bottom: 24px">
+          <label
+            style="
+              display: block;
+              font-size: 12px;
+              font-weight: 600;
+              color: var(--text);
+              margin-bottom: 8px;
+              text-transform: uppercase;
+              letter-spacing: 0.04em;
+            "
+            >Admin Passcode</label
+          >
+          <input
+            id="passcodeInput"
+            type="password"
+            placeholder="Enter your passcode"
+            onkeypress="handleLoginKeypress(event)"
+            style="
+              width: 100%;
+              padding: 10px 14px;
+              background: var(--surface);
+              border: 1px solid var(--border);
+              border-radius: 8px;
+              color: var(--text);
+              font-family: var(--mono);
+              font-size: 14px;
+              transition: all 0.2s;
+            "
+          />
+        </div>
+
+        <button
+          onclick="submitLogin()"
+          style="
+            width: 100%;
+            padding: 10px 14px;
+            background: linear-gradient(135deg, var(--accent), #1e40af);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+          "
+          onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 10px 20px rgba(37, 99, 235, 0.3)'"
+          onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'"
+        >
+          Access Dashboard
+        </button>
+
+        <div
+          style="
+            margin-top: 20px;
+            font-size: 11px;
+            color: var(--muted);
+            text-align: center;
+            font-family: var(--mono);
+          "
+        >
+          This is a private admin interface
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div
+      id="mainContent"
+      style="display: none; flex-direction: column; min-height: 100vh"
+    >
+      <!-- TOPBAR -->
+      <div class="topbar">
+        <div class="brand">
+          <div class="brand-dot"></div>
+          <span>Dr.WinMac</span>
+        </div>
+        <div class="badge">OPENAI POWERED</div>
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            color: var(--muted);
+            font-family: var(--mono);
+          "
+        >
+          <span id="clock">Feb 17 16:26</span>
+          <span>·</span>
+          <span>PRIVATE</span>
+        </div>
+      </div>
+
+      <div class="layout">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+          <div class="sidebar-label">Workflow</div>
+
+          <div class="nav-item active">
+            <svg
+              class="nav-icon"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 10V3L4 14h7v7l9-11h-7z"
+              ></path>
+            </svg>
+            AI Expansion
+          </div>
+
+          <div class="nav-item" style="opacity: 0.4; cursor: not-allowed">
+            <svg
+              class="nav-icon"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              ></path>
+            </svg>
+            Manual Editor
+            <span
+              style="
+                margin-left: auto;
+                font-size: 10px;
+                background: rgba(255, 255, 255, 0.08);
+                border-radius: 4px;
+                padding: 2px 6px;
+              "
+              >Legacy</span
+            >
+          </div>
+
+          <div class="sidebar-sep"></div>
+
+          <div class="sidebar-label">Status</div>
+
+          <div class="stat-block">
+            <div class="stat-label">Mode</div>
+            <div class="stat-value" style="font-size: 13px" id="stat-mode">
+              SMART
+            </div>
+            <div class="stat-sub">expansion method</div>
+          </div>
+
+          <div class="stat-block">
+            <div class="stat-label">Email</div>
+            <div
+              class="stat-value"
+              style="font-size: 11px; font-family: var(--mono)"
+            >
+              <a
+                href="http://localhost:5000/cdn-cgi/l/email-protection"
+                class="__cf_email__"
+                data-cfemail="cfa5aabdaaa2b68fabbdb8a6a1a2aeace1bbaaaca7"
+                >[email&nbsp;protected]</a
+              >
+            </div>
+            <div class="stat-sub">preview delivery</div>
+          </div>
+
+          <div class="sidebar-sep"></div>
+
+          <div class="sidebar-label">Research Sources</div>
+
+          <div
+            style="
+              font-size: 10px;
+              font-family: var(--mono);
+              color: var(--muted);
+              padding: 0 4px;
+              line-height: 2.2;
+            "
+          >
+            <div>□ Company press releases</div>
+            <div>□ Environmental data</div>
+            <div>□ Technical research</div>
+            <div>□ Industry news</div>
+            <div>□ Supporting statistics</div>
+            <div style="color: #6ee7b7; margin-top: 8px">
+              ⚡ OpenAI GPT-4o expansion
+            </div>
+            <div style="color: #fbbf24; margin-top: 4px">
+              💰 ~$0.03 per post
+            </div>
+          </div>
+
+          <div class="sidebar-sep"></div>
+
+          <div class="sidebar-label">Deploy Process</div>
+
+          <div
+            style="
+              font-size: 10px;
+              font-family: var(--mono);
+              color: var(--muted);
+              padding: 0 4px;
+              line-height: 2.2;
+            "
+          >
+            <div>1. Parse short post</div>
+            <div>2. Research &amp; expand</div>
+            <div>3. Email preview</div>
+            <div>4. Approve/edit via reply</div>
+            <div>5. Auto-generate files</div>
+            <div>6. Optional git push</div>
+          </div>
+        </aside>
+
+        <!-- MAIN FORM -->
+        <main class="main">
+          <div class="page-title">AI Blog Expansion</div>
+          <div class="page-sub">
+            Paste your short GPT post. AI expands it into full Dr.WinMac voice
+            with research backing.
+          </div>
+
+          <!-- MODE SELECTOR -->
+          <div class="mode-selector">
+            <button
+              class="mode-btn active"
+              onclick="selectMode('smart')"
+              data-mode="smart"
+            >
+              ⚡ Smart Expansion
+            </button>
+            <button
+              class="mode-btn"
+              onclick="selectMode('research')"
+              data-mode="research"
+            >
+              🔬 Research Heavy
+            </button>
+            <button
+              class="mode-btn"
+              onclick="selectMode('voice')"
+              data-mode="voice"
+            >
+              📝 Voice Only
+            </button>
+          </div>
+
+          <div class="mode-description" id="modeDescription">
+            OpenAI GPT-4o auto-research + voice expansion. Balances depth with
+            readability.
+          </div>
+
+          <!-- INPUT SECTION -->
+          <div class="input-section">
+            <div class="input-label">
+              <svg
+                class="input-icon"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                ></path>
+              </svg>
+              Short GPT Post Input
+            </div>
+
+            <textarea
+              class="short-post-input"
+              id="shortPostInput"
+              placeholder="Paste your short GPT post here...
+
+Example:
+Under-the-Radar Tech Shift: Space-Based Data Centers 🛰️
+
+Most AI conversations focus on models and tools. Meanwhile, infrastructure is quietly evolving behind the scenes.
+
+One emerging concept: orbital data centers designed to help handle the growing energy and cooling demands of AI.
+
+Here&#39;s the environmental context:  
+Modern AI data centers require massive electricity and significant water for cooling...
+
+[Continue with your short post content]"
+            ></textarea>
+          </div>
+
+          <!-- EXPANSION OPTIONS -->
+          <div class="expand-section">
+            <div class="input-label">
+              <svg
+                class="input-icon"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                ></path>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                ></path>
+              </svg>
+              Expansion Settings
+            </div>
+
+            <div class="expand-options">
+              <div
+                class="expand-option active"
+                onclick="toggleOption(this)"
+                data-option="research"
+              >
+                <div class="expand-option-label">Auto-Research</div>
+                <div class="expand-option-desc">
+                  Pull supporting data &amp; context
+                </div>
+              </div>
+
+              <div
+                class="expand-option active"
+                onclick="toggleOption(this)"
+                data-option="voice"
+              >
+                <div class="expand-option-label">Voice Matching</div>
+                <div class="expand-option-desc">
+                  Book-style cadence &amp; tone
+                </div>
+              </div>
+
+              <div
+                class="expand-option active"
+                onclick="toggleOption(this)"
+                data-option="sections"
+              >
+                <div class="expand-option-label">Section Mapping</div>
+                <div class="expand-option-desc">Auto-structure to template</div>
+              </div>
+
+              <div
+                class="expand-option active"
+                onclick="toggleOption(this)"
+                data-option="cta"
+              >
+                <div class="expand-option-label">Smart CTA</div>
+                <div class="expand-option-desc">
+                  Educational-appropriate CTA
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RESEARCH STATUS -->
+          <div class="research-status" id="researchStatus">
+            <div
+              style="
+                font-size: 11px;
+                font-weight: 600;
+                color: var(--warning);
+                font-family: var(--mono);
+                margin-bottom: 10px;
+              "
+            >
+              RESEARCH IN PROGRESS
+            </div>
+
+            <div class="research-item">
+              <div class="research-dot" id="research-companies"></div>
+              <span>Scanning company developments...</span>
+            </div>
+
+            <div class="research-item">
+              <div class="research-dot" id="research-data"></div>
+              <span>Pulling environmental data...</span>
+            </div>
+
+            <div class="research-item">
+              <div class="research-dot" id="research-technical"></div>
+              <span>Finding technical research...</span>
+            </div>
+
+            <div class="research-item">
+              <div class="research-dot" id="research-news"></div>
+              <span>Checking recent industry news...</span>
+            </div>
+
+            <div class="research-item">
+              <div class="research-dot" id="research-voice"></div>
+              <span>Expanding in Dr.WinMac voice...</span>
+            </div>
+          </div>
+
+          <!-- EMAIL STATUS -->
+          <div class="email-status" id="emailStatus">
+            <div class="email-status-header">
+              <svg
+                class="email-icon"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                ></path>
+              </svg>
+              <div class="email-status-title">Email Sent</div>
+            </div>
+            <div class="email-status-text">
+              Preview sent to
+              <a
+                href="http://localhost:5000/cdn-cgi/l/email-protection"
+                class="__cf_email__"
+                data-cfemail="59333c2b3c3420193d2b2e303734383a772d3c3a31"
+                >[email&nbsp;protected]</a
+              ><br />
+              Reply with "Approve" or "SECTION 2: {your edits}" to publish.
+            </div>
+          </div>
+
+          <!-- BUTTONS -->
+          <div class="btn-row">
+            <button
+              class="btn-primary"
+              id="expandBtn"
+              onclick="startExpansion()"
+            >
+              ⚡ Expand &amp; Email Preview
+            </button>
+            <button class="btn-secondary" onclick="clearAll()">Clear</button>
+            <button
+              class="btn-warning"
+              style="display: none"
+              id="cancelBtn"
+              onclick="cancelExpansion()"
+            >
+              Cancel
+            </button>
+          </div>
+        </main>
+
+        <!-- PREVIEW PANEL -->
+        <aside class="preview-panel">
+          <div class="preview-header">
+            <div class="preview-title-bar">Expansion Preview</div>
+          </div>
+
+          <div class="preview-body" id="previewBody">
+            <pre class="preview-content">
+TITLE: The Quiet Revolution of Space-Based Data Centers
+SLUG: the-quiet-revolution-of-space-based-data-centers
+SEO: Exploring the shift to orbital data centers and their potential impact on energy efficiency and environmental concerns.
+
+LEAD:
+In the ever-evolving landscape of technology, some shifts happen quietly, almost imperceptibly at first, until they reshape the very foundation of our digital world. Amongst the noise of new AI models and tools, a subtle yet profound change is taking place in the realm of infrastructure.
+
+SECTIONS:
+1. The Part Most People Aren't Watching
+While much of the public discourse around AI focuses on software advancements and novel applications, the underlying infrastructure that supports these technologies is undergoing a transformation that many overlook. The traditional data centers, which have been the workhorses of digital storage and computation, are being reconsidered. In the background, a new concept is emerging: space-based data centers. These are not the stuff of science fiction but a tangible possibility being explored by companies and researchers worldwide. Major cloud providers and startups alike are beginning to invest in the potential of placing computational infrastructure in orbit, where the unique conditions of space offer distinct advantages.
+
+2. What's Actually Changing
+The primary driver behind this shift is the growing demand for energy and cooling in data centers, which has become an environmental challenge. On Earth, these centers consume vast amounts of electricity and water to prevent overheating—a necessity that poses sustainability concerns as AI continues to scale. In space, however, data centers can take advantage of continuous solar exposure, harnessing solar energy more efficiently without the atmospheric interference experienced on Earth. Furthermore, the vacuum of space allows heat to be dissipated through radiation, circumventing the need for water-intensive cooling processes. Technical feasibility studies are underway, addressing engineering challenges such as the durability of equipment in space and the logistics of maintaining orbital infrastructure. Recent innovations, including advancements in solar panel efficiency and lightweight materials, bring these ambitions closer to reality.
+
+3. Why This Actually Matters
+The implications of space-based data centers extend beyond technological novelty; they represent a potential shift in the sustainability equation of our digital future. By reducing reliance on local energy grids and minimizing water consumption, these orbital facilities could alleviate some of the environmental pressures associated with conventional data centers. This shift is particularly relevant as global awareness of environmental issues grows. While the establishment of such infrastructure does not come without its own environmental costs—such as the impact of rocket launches and space manufacturing—the net benefits in terms of reduced energy and water usage could be substantial. Companies involved in this sector are already forming partnerships and announcing developments that hint at a future where space-based solutions complement Earth-based systems, creating a hybrid infrastructure that is more resilient and environmentally conscious.
+
+4. Where This Quietly Leads
+Looking ahead, the trajectory of space-based data centers could lead us towards a future where our digital infrastructure is not confined to the limitations of terrestrial resources. In the near term, we can expect research and pilot projects to explore the potential of this technology. As these efforts progress, experimental and niche workloads might be tested in orbit, gradually expanding the role of space-based solutions. Ultimately, a hybrid model could emerge, blending the strengths of both Earth and space-based infrastructures. This quiet revolution may not eliminate all environmental impacts, but it represents a meaningful step towards a more sustainable digital ecosystem. As we continue to advance technologically, it's these understated shifts that often hold the most promise for transformative change.
+
+TEASER: Unveiling the subtle shift towards orbital data centers and their potential to reshape the environmental impact of digital infrastructure.
+IMAGE: undefined</pre
+            >
+          </div>
+        </aside>
+      </div>
+
+      <!-- TOAST -->
+      <div class="success-toast" id="toast" style="display: none">
+        ✓ Expansion complete — preview emailed
+      </div>
+
+      <script data-cfasync="false" src="./assets/email-decode.min.js"></script>
+      <script>
+        // ── CLOCK ──
+        function updateClock() {
+          const now = new Date();
+          const t = now.toLocaleTimeString("en-US", {
+            hour12: false,
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+          const d = now.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          });
+          document.getElementById("clock").textContent = d + " " + t;
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // ── STATE ──
+        let currentMode = "smart";
+        let expansionInProgress = false;
+        let expandedContent = null;
+
+        // ── MODE SELECTION ──
+        function selectMode(mode) {
+          currentMode = mode;
+          document.querySelectorAll(".mode-btn").forEach((btn) => {
+            btn.classList.remove("active");
+          });
+          document
+            .querySelector(`[data-mode="${mode}"]`)
+            .classList.add("active");
+
+          const descriptions = {
+            smart:
+              "OpenAI GPT-4o auto-research + voice expansion. Balances depth with readability.",
+            research:
+              "Heavy research focus with GPT-4o. Deep technical context and multiple sources.",
+            voice:
+              "Minimal research with GPT-4o. Focus on voice expansion and structure only.",
+          };
+
+          document.getElementById("modeDescription").textContent =
+            descriptions[mode];
+          document.getElementById("stat-mode").textContent = mode.toUpperCase();
+        }
+
+        // ── EXPANSION OPTIONS ──
+        function toggleOption(element) {
+          element.classList.toggle("active");
+        }
+
+        // ── EXPANSION LOGIC ──
+        async function startExpansion() {
+          const shortPost = document
+            .getElementById("shortPostInput")
+            .value.trim();
+
+          if (!shortPost) {
+            alert("Please paste your short GPT post first.");
+            return;
+          }
+
+          if (expansionInProgress) {
+            alert("Expansion already in progress...");
+            return;
+          }
+
+          expansionInProgress = true;
+
+          // Update UI
+          document.getElementById("expandBtn").disabled = true;
+          document.getElementById("expandBtn").innerHTML =
+            '<div class="loading-spinner"></div>Expanding...';
+          document.getElementById("cancelBtn").style.display = "block";
+          document.getElementById("researchStatus").classList.add("active");
+
+          try {
+            // Simulate research process
+            await simulateResearch();
+
+            // Generate expanded content
+            const expanded = await expandPost(shortPost);
+
+            // Send email preview
+            await sendEmailPreview(expanded);
+
+            // Update preview panel
+            updatePreviewPanel(expanded);
+
+            // Show success
+            showEmailStatus();
+            showToast();
+          } catch (error) {
+            alert("Expansion failed: " + error.message);
+          } finally {
+            expansionInProgress = false;
+            document.getElementById("expandBtn").disabled = false;
+            document.getElementById("expandBtn").textContent =
+              "⚡ Expand & Email Preview";
+            document.getElementById("cancelBtn").style.display = "none";
+            document
+              .getElementById("researchStatus")
+              .classList.remove("active");
+            resetResearchDots();
+          }
+        }
+
+        // ── RESEARCH SIMULATION ──
+        async function simulateResearch() {
+          const steps = ["companies", "data", "technical", "news", "voice"];
+
+          for (let i = 0; i < steps.length; i++) {
+            const dotId = `research-${steps[i]}`;
+            document.getElementById(dotId).classList.add("active");
+
+            // Simulate research time
+            await new Promise((resolve) =>
+              setTimeout(resolve, Math.random() * 2000 + 1000)
+            );
+
+            document.getElementById(dotId).classList.remove("active");
+            document.getElementById(dotId).classList.add("done");
+          }
+        }
+
+        function resetResearchDots() {
+          const dots = document.querySelectorAll(".research-dot");
+          dots.forEach((dot) => {
+            dot.classList.remove("active", "done");
+          });
+        }
+
+        // ── POST EXPANSION ──
+        async function expandPost(shortPost) {
+          try {
+            const response = await fetch(`${API_BASE_URL}/api/expand`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${adminPasscode}`,
+              },
+              body: JSON.stringify({
+                short_post: shortPost,
+                mode: currentMode,
+              }),
+            });
+
+            if (!response.ok) {
+              throw new Error(
+                `API error: ${response.status} ${response.statusText}`
+              );
+            }
+
+            const data = await response.json();
+
+            // Support two possible response shapes:
+            // 1) Legacy: { expanded_post: "# Title\n\n## Section..." }
+            // 2) Structured: { title, slug, seo, lead, sections, teaser }
+            let expanded = null;
+
+            if (data.expanded_post) {
+              const raw = data.expanded_post || "";
+              const titleLine = raw.split("\n")[0] || "Untitled";
+              expanded = {
+                title: titleLine,
+                slug: generateSlug(titleLine),
+                seo: data.seo || raw.substring(0, 150),
+                kicker: "Under the Radar Tech",
+                lead: extractLead(raw),
+                sections: parseExpandedContent(raw),
+                teaser: data.teaser || generateTeaser(shortPost),
+                imagePath: "../assets/blog/orbital-data-centers.jpg",
+                imageAlt:
+                  "Conceptual illustration of space-based data centers orbiting Earth",
+              };
+            } else {
+              expanded = {
+                title: data.title || extractTitle(shortPost),
+                slug:
+                  data.slug ||
+                  generateSlug(data.title || extractTitle(shortPost)),
+                seo: data.seo || generateSEO(data.lead || shortPost),
+                kicker: "Under the Radar Tech",
+                lead: data.lead || extractLead(shortPost),
+                sections:
+                  data.sections || generateSections(data.lead || shortPost),
+                teaser: data.teaser || generateTeaser(shortPost),
+                imagePath:
+                  data.imagePath || "../assets/blog/orbital-data-centers.jpg",
+                imageAlt:
+                  data.imageAlt ||
+                  "Conceptual illustration of space-based data centers orbiting Earth",
+              };
+            }
+
+            expandedContent = expanded;
+            return expanded;
+          } catch (error) {
+            throw new Error("Failed to expand post: " + error.message);
+          }
+        }
+
+        function parseExpandedContent(content) {
+          // Parse expanded content into sections
+          const sections = [];
+          const lines = content.split("\n").filter((l) => l.trim());
+          let currentSection = null;
+
+          for (let line of lines) {
+            if (line.startsWith("##")) {
+              if (currentSection) sections.push(currentSection);
+              currentSection = {
+                heading: line.replace(/^##\s*/, ""),
+                body: "",
+              };
+            } else if (currentSection && line.trim()) {
+              currentSection.body += (currentSection.body ? " " : "") + line;
+            }
+          }
+
+          if (currentSection) sections.push(currentSection);
+
+          // Fallback if no sections found
+          if (sections.length === 0) {
+            sections.push({
+              heading: "The Part Most People Aren't Watching",
+              body: content.substring(0, 300),
+            });
+          }
+
+          return sections;
+        }
+
+        // ── CONTENT EXTRACTION HELPERS ──
+        function extractTitle(post) {
+          const lines = post.split("\n").filter((line) => line.trim());
+          const firstLine = lines[0] || "Untitled Post";
+          return firstLine.replace(/🛰️|📱|🤖|⚡|🔬|📡/g, "").trim();
+        }
+
+        function generateSlug(title) {
+          return title
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, "")
+            .replace(/\s+/g, "-")
+            .replace(/-+/g, "-")
+            .slice(0, 60);
+        }
+
+        function generateSEO(post) {
+          const firstParagraph =
+            post.split("\n\n")[1] || post.split("\n")[1] || "";
+          return firstParagraph.slice(0, 150) + "...";
+        }
+
+        function extractLead(post) {
+          const paragraphs = post.split("\n\n").filter((p) => p.trim());
+          return (
+            paragraphs[1] ||
+            paragraphs[0] ||
+            "Lead paragraph would be generated here."
+          );
+        }
+
+        function generateSections(post) {
+          // This would use AI to parse the post and create proper sections
+          return [
+            {
+              heading: "The Part Most People Aren't Watching",
+              body: "While most discussions focus on AI models and applications, a quieter infrastructure shift is happening in orbit...",
+            },
+            {
+              heading: "What's Actually Changing",
+              body: "Traditional data centers face mounting environmental pressure. Cooling systems consume massive amounts of water...",
+            },
+            {
+              heading: "Why This Actually Matters",
+              body: "The environmental implications extend beyond simple energy consumption. Water usage for cooling has become a critical factor...",
+            },
+            {
+              heading: "Where This Quietly Leads",
+              body: "The timeline is measured in decades, not years. Near-term research will focus on proof-of-concept missions...",
+            },
+          ];
+        }
+
+        function generateTeaser(post) {
+          return "How orbital infrastructure could shift the environmental equation for AI computing.";
+        }
+
+        // ── EMAIL SIMULATION ──
+        async function sendEmailPreview(content) {
+          try {
+            // Ensure date exists
+            const date = content.date || new Date().toISOString().slice(0, 10);
+
+            const payload = {
+              title: content.title,
+              slug: content.slug,
+              lead: content.lead,
+              sections: content.sections,
+              teaser: content.teaser,
+              seo: content.seo,
+              date: date,
+            };
+
+            const response = await fetch(`${API_BASE_URL}/api/preview`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${adminPasscode}`,
+              },
+              body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+              throw new Error(`Failed to send preview: ${response.status}`);
+            }
+
+            console.log("Preview email sent successfully");
+          } catch (error) {
+            console.error("Email error:", error.message);
+            // Don't throw - allow user to continue even if email fails
+          }
+        }
+
+        function showEmailStatus() {
+          document.getElementById("emailStatus").classList.add("active");
+          setTimeout(() => {
+            document.getElementById("emailStatus").classList.remove("active");
+          }, 8000);
+        }
+
+        // ── PREVIEW PANEL ──
+        function updatePreviewPanel(content) {
+          const previewBody = document.getElementById("previewBody");
+
+          const preview = `TITLE: ${content.title}
+SLUG: ${content.slug}
+SEO: ${content.seo}
+
+LEAD:
+${content.lead}
+
+SECTIONS:
+${content.sections
+  .map((s, i) => `${i + 1}. ${s.heading}\n${s.body}`)
+  .join("\n\n")}
+
+TEASER: ${content.teaser}
+IMAGE: ${content.imagePath}`;
+
+          previewBody.innerHTML = `<pre class="preview-content">${escapeHtml(
+            preview
+          )}</pre>`;
+        }
+
+        function escapeHtml(text) {
+          const div = document.createElement("div");
+          div.textContent = text;
+          return div.innerHTML;
+        }
+
+        // ── UTILITY FUNCTIONS ──
+        function cancelExpansion() {
+          if (confirm("Cancel expansion in progress?")) {
+            expansionInProgress = false;
+            document.getElementById("expandBtn").disabled = false;
+            document.getElementById("expandBtn").textContent =
+              "⚡ Expand & Email Preview";
+            document.getElementById("cancelBtn").style.display = "none";
+            document
+              .getElementById("researchStatus")
+              .classList.remove("active");
+            resetResearchDots();
+          }
+        }
+
+        function clearAll() {
+          if (confirm("Clear all content?")) {
+            document.getElementById("shortPostInput").value = "";
+            document.getElementById("previewBody").innerHTML = `
+        <div class="placeholder-msg">
+          <div class="placeholder-icon">⚡</div>
+          <div class="placeholder-text">Paste your short post and hit<br>Expand to see the magic happen.</div>
+        </div>
+      `;
+            expandedContent = null;
+          }
+        }
+
+        function showToast() {
+          const toast = document.getElementById("toast");
+          toast.style.display = "block";
+          setTimeout(() => {
+            toast.style.display = "none";
+          }, 4000);
+        }
+
+        // ── API INTEGRATION ──
+        /* The simplified API integration below was removed because it
+           overrode the richer expansion flow (with auth, research
+           simulation and email preview). The active `startExpansion()`
+           implementation is the one defined earlier which uses
+           `${API_BASE_URL}/api/expand` and includes the Authorization
+           header. */
+
+        // ── INITIALIZATION ──
+        selectMode("smart");
+      </script>
+    </div>
+    <!-- END MAIN CONTENT -->
+  </body>
+</html>

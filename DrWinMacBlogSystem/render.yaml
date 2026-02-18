@@ -1,0 +1,48 @@
+services:
+  - type: web
+    name: drwinmac-blog-api
+    runtime: python
+    pythonVersion: 3.11
+    plan: standard
+
+    # Build and start configuration
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --workers=2 --worker-class sync --timeout=120
+
+    # Health check
+    healthCheckPath: /api/status
+    healthCheckInterval: 30
+
+    # Auto-deploy on Git push
+    autoDeploy: true
+
+    # Environment variables (set these in Render dashboard)
+    # DO NOT set secrets here—use dashboard instead
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+        sync: false # Set in dashboard
+      - key: FROM_EMAIL
+        sync: false
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_SERVER
+        value: mail.privateemail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: CORS_ORIGINS
+        value: "https://yourdomain.com,https://www.yourdomain.com"
+      - key: RATE_LIMIT_REQUESTS
+        value: "10"
+      - key: RATE_LIMIT_WINDOW
+        value: "3600"
+
+    # Auto-deploy on push
+    autoDeploy: true
+
+    # Healthcheck
+    healthCheckPath: /api/status
