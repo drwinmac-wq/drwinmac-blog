@@ -69,19 +69,20 @@ ARTICLE STRUCTURE (MUST FOLLOW):
    - NO hype predictions
 """
     
-    async def expand_post(self, short_post: str, mode: str = 'smart') -> Dict:
+    async def expand_post(self, short_post: str, mode: str = 'smart', model: str = 'gpt-4o') -> Dict:
         """
         Expand short post into full article
         
         Args:
             short_post: User's short post text
             mode: 'smart' (balanced), 'research' (heavy sources), 'voice' (minimal research)
+            model: OpenAI model to use (gpt-4o, gpt-4o-mini, gpt-4-turbo)
         
         Returns:
             Dict with title, slug, lead, sections, teaser, seo, date
         """
         
-        logger.info(f"Expanding post in {mode} mode")
+        logger.info(f"Expanding post in {mode} mode with model {model}")
         
         # Step 1: Parse the short post
         parsed = self._parse_short_post(short_post)
@@ -94,7 +95,7 @@ ARTICLE STRUCTURE (MUST FOLLOW):
             logger.info(f"Research context prepared")
         
         # Step 3: Expand with OpenAI
-        expanded = await self._expand_with_gpt4o(parsed, research_data, mode)
+        expanded = await self._expand_with_gpt4o(parsed, research_data, mode, model)
         logger.info(f"Expansion complete: {expanded['title']}")
         
         # Step 4: Structure for template
@@ -192,11 +193,12 @@ ARTICLE STRUCTURE (MUST FOLLOW):
         self,
         parsed: Dict,
         research: Dict,
-        mode: str
+        mode: str,
+        model: str = 'gpt-4o'
     ) -> Dict:
-        """Use GPT-4o to expand content in Dr.WinMac voice"""
+        """Use OpenAI to expand content in Dr.WinMac voice"""
         
-        logger.info("Calling OpenAI GPT-4o...")
+        logger.info(f"Calling OpenAI {model}...")
         
         # System prompt with voice profile
         system_prompt = f"""You are an AI content writer expanding a short blog post into a full article in the Dr.WinMac voice.
@@ -229,7 +231,7 @@ Expand this into a full blog post. Return only valid JSON."""
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4o",
+                model=model,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
