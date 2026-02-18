@@ -1956,7 +1956,13 @@ Modern AI data centers require massive electricity and significant water for coo
                 />
               </div>
               <div class="form-group">
-                <label class="form-label">Lead</label>
+                <label class="form-label">Date</label>
+                <input
+                  type="date"
+                  id="previewDate"
+                  class="form-input"
+                />
+              </div>
                 <textarea
                   id="previewLead"
                   class="form-textarea"
@@ -2707,6 +2713,8 @@ IMAGE: ${content.imagePath}`;
           currentEditingSlug = postData.slug;
 
           document.getElementById("previewTitle").value = postData.title || "";
+          document.getElementById("previewDate").value =
+            postData.date || new Date().toISOString().slice(0, 10);
           document.getElementById("previewLead").value = postData.lead || "";
           document.getElementById("previewSEO").value = postData.seo || "";
           document.getElementById("previewTeaser").value =
@@ -2725,9 +2733,10 @@ IMAGE: ${content.imagePath}`;
           } else if (postData.image_path || postData.imagePath) {
             // Show existing image so user knows one is already attached
             const existingImg = postData.image_path || postData.imagePath;
-            const imgSrc = existingImg.startsWith('http') || existingImg.startsWith('/')
-              ? existingImg
-              : `https://drwinmac.tech/assets/blog/${existingImg}`;
+            const imgSrc =
+              existingImg.startsWith("http") || existingImg.startsWith("/")
+                ? existingImg
+                : `https://drwinmac.tech/assets/blog/${existingImg}`;
             previewThumb.src = imgSrc;
             previewThumb.style.display = "block";
           } else {
@@ -2874,7 +2883,7 @@ IMAGE: ${content.imagePath}`;
             teaser: document.getElementById("previewTeaser").value || "",
             image_path: imagePath,
             sections,
-            date: new Date().toISOString().slice(0, 10),
+            date: document.getElementById("previewDate").value || new Date().toISOString().slice(0, 10),
           };
 
           try {
