@@ -448,6 +448,7 @@ class BlogPublisher:
     <footer class="footer">
         <div class="container">
             <p>&copy; {datetime.now().year} Dr.WinMac. All rights reserved.</p>
+            <p style="margin-top:8px;"><a href="https://drwinmac-blog-api.onrender.com/admin/" style="font-size:11px;color:rgba(255,255,255,0.3);text-decoration:none;" target="_blank" rel="noopener">Admin</a></p>
         </div>
     </footer>
     <script>
