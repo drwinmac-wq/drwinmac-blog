@@ -350,7 +350,6 @@ class BlogPublisher:
         </div>
         <div class="post-card-footer">
             <span class="post-card-date">{display_date}</span>
-            <span class="post-card-cat">Under the Radar Tech</span>
             <a href="/blog/{slug}.html" class="post-card-read">Read more &rarr;</a>
         </div>
     </article>
