@@ -156,7 +156,7 @@ def index():
 @app.route('/admin/index.html')
 def admin_index():
     """Serve admin dashboard"""
-    return send_from_directory('admin', 'admin-dashboard.html')
+    return send_from_directory('admin', 'blog_admin_2_0.html')
 
 @app.route('/admin/<path:filename>')
 def admin_static(filename):
