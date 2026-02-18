@@ -264,6 +264,9 @@ class BlogPublisher:
         </div>
     </section>
 
+    <!-- Featured Image -->
+    {f'<section class="section post-featured-image"><div class="container"><img src="{image_path}" alt="{image_alt}" style="width:100%;border-radius:var(--radius-lg);display:block;"></div></section>' if image_path and 'placeholder' not in image_path else ''}
+
     <!-- Article Body -->
     {sections_html}
 
