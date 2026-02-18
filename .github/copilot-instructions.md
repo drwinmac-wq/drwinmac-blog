@@ -36,7 +36,7 @@ Key files:
 ## Deployment
 
 - **Static site**: Automatic on `git push origin main`. The `deploy.yml` workflow FTPs everything **except** `DrWinMacBlogSystem/`, `Backup/`, `.git*`, `.vscode/`, and dotfiles.
-- **API (Render)**: Deployed independently at `https://drwinmac-blog-api.onrender.com`. Start command: `cd DrWinMacBlogSystem && gunicorn app:app --workers=1 --timeout=120`. Health check: `GET /api/status`.
+- **API (Render)**: Deployed independently at `https://drwinmac-blog.onrender.com`. Start command: `cd DrWinMacBlogSystem && gunicorn app:app --workers=1 --timeout=120`. Health check: `GET /api/status`.
 - `render.yaml` is at the repo root but only defines the Render service — it is **not** used by the FTP deploy.
 
 ## Local API Development

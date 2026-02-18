@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: drwinmac-blog-api
+    name: drwinmac-blog
     runtime: python
     pythonVersion: 3.11
     plan: free
