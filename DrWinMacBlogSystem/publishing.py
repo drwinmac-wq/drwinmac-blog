@@ -243,6 +243,9 @@ class BlogPublisher:
       <a href="/#contact">Contact</a>
     </div>
 
+    <!-- Featured Image -->
+    {f'<section class="section post-featured-image" style="padding-bottom:0"><div class="container"><img src="{image_path}" alt="{image_alt}" style="width:100%;border-radius:var(--radius-lg);display:block;max-height:520px;object-fit:cover;"></div></section>' if image_path and 'placeholder' not in image_path else ''}
+
     <!-- Post Header -->
     <section class="section post-hero">
         <div class="container">
@@ -263,9 +266,6 @@ class BlogPublisher:
             <p class="lead-paragraph">{lead}</p>
         </div>
     </section>
-
-    <!-- Featured Image -->
-    {f'<section class="section post-featured-image"><div class="container"><img src="{image_path}" alt="{image_alt}" style="width:100%;border-radius:var(--radius-lg);display:block;"></div></section>' if image_path and 'placeholder' not in image_path else ''}
 
     <!-- Article Body -->
     {sections_html}
