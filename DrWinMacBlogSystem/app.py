@@ -59,7 +59,7 @@ for v in local_variants:
 CORS(app, resources={
     r"/api/*": {
         "origins": origins if origins else '*',
-        "methods": ["GET", "POST", "OPTIONS"],
+        "methods": ["GET", "POST", "DELETE", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization"]
     }
 })
@@ -377,8 +377,11 @@ def api_publish():
         data = request.json or {}
         
         # Validate required fields
-        required = ['title', 'slug', 'lead', 'sections', 'teaser', 'seo']
+        required = ['title', 'slug', 'lead', 'teaser', 'seo']
         missing = [f for f in required if not data.get(f)]
+        # sections is optional — an empty list is valid
+        if 'sections' not in data:
+            missing.append('sections')
         
         if missing:
             return jsonify({

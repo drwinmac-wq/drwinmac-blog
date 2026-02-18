@@ -814,19 +814,24 @@ body.curriculum .small {
   height: 44px;
   padding: 0;
   border: 0;
-  background: transparent;
+  background: rgba(17, 24, 39, 0.10);
+  border-radius: 8px;
   cursor: pointer;
 }
 
+/* Three-bar hamburger using box-shadow on a single ::before pseudo-element */
 .nav-toggle::before {
   content: "";
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 16px;
+  width: 20px;
   height: 2px;
   background: #111;
+  border-radius: 2px;
+  /* top bar via negative translate, bottom bar via positive */
+  box-shadow: 0 -6px 0 #111, 0 6px 0 #111;
 }
 
 #global-menu {
