@@ -22,6 +22,7 @@ jobs:
           exclude: |
             **/.git*
             **/.git*/**
+            **/.vscode/**
             **/node_modules/**
             DrWinMacBlogSystem/**
             Backup/**
