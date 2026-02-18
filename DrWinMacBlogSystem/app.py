@@ -409,6 +409,26 @@ def api_posts():
         logger.error(f"Failed to list posts: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/posts/<slug>', methods=['DELETE'])
+@verify_passcode
+def api_delete_post(slug):
+    """
+    Delete a published post by slug
+    """
+    if not publisher:
+        return jsonify({'error': 'Publisher not available'}), 503
+    
+    try:
+        publisher.delete_post(slug)
+        return jsonify({
+            'success': True,
+            'message': f'Post {slug} deleted'
+        })
+    
+    except Exception as e:
+        logger.error(f"Failed to delete post: {e}")
+        return jsonify({'error': str(e)}), 500
+
 # ─── ERROR HANDLERS ───────────────────────────────────────────────────────
 
 @app.errorhandler(404)

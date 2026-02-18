@@ -747,7 +747,324 @@
         background: rgba(255, 255, 255, 0.1);
         border-radius: 3px;
       }
+
+      /* ── MODAL OVERLAY ── */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.85);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        backdrop-filter: blur(4px);
+      }
+
+      .modal-overlay.active {
+        display: flex;
+        animation: fadeIn 0.2s ease;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
+      /* ── MODAL CONTENT ── */
+      .modal-content {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        width: 90%;
+        max-width: 600px;
+        max-height: 85vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+      }
+
+      .modal-content.modal-wide {
+        max-width: 1200px;
+        width: 95%;
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 24px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .modal-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text);
+        font-family: var(--sans);
+      }
+
+      .modal-close {
+        background: none;
+        border: none;
+        color: var(--muted);
+        font-size: 24px;
+        cursor: pointer;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.2s;
+      }
+
+      .modal-close:hover {
+        color: var(--text);
+      }
+
+      .modal-body {
+        flex: 1;
+        padding: 24px;
+        overflow-y: auto;
+      }
+
+      .modal-body.modal-split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+      }
+
+      .modal-left {
+        padding-right: 12px;
+      }
+
+      .modal-right {
+        border-left: 1px solid var(--border);
+        padding-left: 12px;
+      }
+
+      .modal-footer {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        padding: 20px 24px;
+        border-top: 1px solid var(--border);
+      }
+
+      /* ── FORM ELEMENTS ── */
+      .form-group {
+        margin-bottom: 16px;
+      }
+
+      .form-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .form-input,
+      .form-textarea {
+        width: 100%;
+        padding: 10px 12px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 14px;
+        transition: all 0.2s;
+      }
+
+      .form-input:focus,
+      .form-textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-glow);
+      }
+
+      .form-textarea {
+        font-family: var(--sans);
+        resize: vertical;
+      }
+
+      /* ── SECTION EDITOR ── */
+      .section-editor {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+
+      .section-heading {
+        margin-bottom: 8px;
+        font-weight: 600;
+      }
+
+      .section-body {
+        margin-bottom: 8px;
+      }
+
+      /* ── BUTTONS ── */
+      .btn-small {
+        padding: 8px 12px;
+        background: var(--accent);
+        border: none;
+        border-radius: 6px;
+        color: white;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .btn-small:hover {
+        background: #1e40af;
+      }
+
+      .btn-small-danger {
+        padding: 6px 10px;
+        background: rgba(224, 44, 19, 0.2);
+        border: 1px solid rgba(224, 44, 19, 0.4);
+        border-radius: 4px;
+        color: #f87171;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .btn-small-danger:hover {
+        background: rgba(224, 44, 19, 0.3);
+        border-color: rgba(224, 44, 19, 0.6);
+      }
+
+      /* ── PREVIEW LIVE ── */
+      .preview-live-label {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--muted);
+        letter-spacing: 0.05em;
+        margin-bottom: 12px;
+      }
+
+      .preview-html {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px;
+        font-size: 13px;
+        line-height: 1.6;
+        color: var(--text);
+        max-height: 500px;
+        overflow-y: auto;
+      }
+
+      .preview-html h2 {
+        font-size: 16px;
+        font-weight: 700;
+        margin: 16px 0 8px 0;
+      }
+
+      .preview-html p {
+        margin-bottom: 12px;
+      }
+
+      /* ── PREVIOUS POSTS PANEL ── */
+      .previous-posts-panel {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        padding: 20px;
+        overflow-y: auto;
+        z-index: 100;
+      }
+
+      .previous-posts-panel.active {
+        display: block;
+      }
+
+      .posts-header {
+        margin-bottom: 16px;
+      }
+
+      .posts-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .posts-search {
+        width: 100%;
+        padding: 8px 12px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text);
+        font-size: 12px;
+      }
+
+      .posts-search:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+
+      .posts-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .post-item {
+        padding: 12px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .post-item:hover {
+        border-color: var(--accent);
+        background: rgba(37, 99, 235, 0.05);
+      }
+
+      .post-item-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 4px;
+      }
+
+      .post-item-date {
+        font-size: 11px;
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+
+      .loading-msg {
+        font-size: 12px;
+        color: var(--muted);
+        text-align: center;
+        padding: 20px;
+      }
     </style>
+
   </head>
   <body>
     <!-- LOGIN MODAL -->
@@ -901,7 +1218,7 @@
         <aside class="sidebar">
           <div class="sidebar-label">Workflow</div>
 
-          <div class="nav-item active">
+          <div class="nav-item active" onclick="switchTab('expand')">
             <svg
               class="nav-icon"
               fill="none"
@@ -918,7 +1235,7 @@
             AI Expansion
           </div>
 
-          <div class="nav-item" style="opacity: 0.4; cursor: not-allowed">
+          <div class="nav-item" onclick="openManualEditorModal()">
             <svg
               class="nav-icon"
               fill="none"
@@ -933,16 +1250,23 @@
               ></path>
             </svg>
             Manual Editor
-            <span
-              style="
-                margin-left: auto;
-                font-size: 10px;
-                background: rgba(255, 255, 255, 0.08);
-                border-radius: 4px;
-                padding: 2px 6px;
-              "
-              >Legacy</span
+          </div>
+
+          <div class="nav-item" onclick="switchTab('previousPosts')" id="previousPostsTab">
+            <svg
+              class="nav-icon"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 6.253v13m0-13C6.5 6.253 3 9.825 3 14s3.5 7.747 9 7.747m0-13c5.5 0 9 3.572 9 7.747m0 0A8.996 8.996 0 0021.7 14c0 4.442-3.637 8.216-8.7 8.216"
+              ></path>
+            </svg>
+            Previous Posts
           </div>
 
           <div class="sidebar-sep"></div>
@@ -1296,6 +1620,106 @@ IMAGE: undefined</pre
       <!-- TOAST -->
       <div class="success-toast" id="toast" style="display: none">
         ✓ Expansion complete — preview emailed
+      </div>
+
+      <!-- MANUAL EDITOR MODAL -->
+      <div class="modal-overlay" id="manualEditorModal" onclick="closeManualEditorModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+          <div class="modal-header">
+            <div class="modal-title">Create Blog Post (Manual)</div>
+            <button class="modal-close" onclick="closeManualEditorModal()">✕</button>
+          </div>
+          <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+            <div class="form-group">
+              <label class="form-label">Title</label>
+              <input type="text" id="manualTitle" class="form-input" placeholder="Blog post title...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Lead (Intro Paragraph)</label>
+              <textarea id="manualLead" class="form-textarea" placeholder="Opening paragraph..." rows="4"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">SEO Description</label>
+              <textarea id="manualSEO" class="form-textarea" placeholder="150-160 characters..." rows="2"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Sections</label>
+              <div id="manualSections">
+                <div class="section-editor">
+                  <input type="text" class="form-input section-heading" placeholder="Section heading...">
+                  <textarea class="form-textarea section-body" placeholder="Section content..." rows="3"></textarea>
+                  <button class="btn-small-danger" onclick="removeSection(this)">Remove</button>
+                </div>
+              </div>
+              <button class="btn-small" onclick="addSection()">+ Add Section</button>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Teaser</label>
+              <textarea id="manualTeaser" class="form-textarea" placeholder="One-line teaser..." rows="2"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeManualEditorModal()">Cancel</button>
+            <button class="btn-primary" onclick="publishFromManualEditor()">📤 Publish</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- BLOG PREVIEW MODAL -->
+      <div class="modal-overlay" id="blogPreviewModal" onclick="closeBlogPreviewModal(event)">
+        <div class="modal-content modal-wide" onclick="event.stopPropagation()">
+          <div class="modal-header">
+            <div class="modal-title">Blog Post Preview & Editor</div>
+            <button class="modal-close" onclick="closeBlogPreviewModal()">✕</button>
+          </div>
+          <div class="modal-body modal-split">
+            <!-- Left: Editable Form -->
+            <div class="modal-left">
+              <div class="form-group">
+                <label class="form-label">Title</label>
+                <input type="text" id="previewTitle" class="form-input" placeholder="Title...">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Lead</label>
+                <textarea id="previewLead" class="form-textarea" placeholder="Lead..." rows="3"></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">SEO</label>
+                <textarea id="previewSEO" class="form-textarea" placeholder="SEO..." rows="2"></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Sections</label>
+                <div id="previewSections"></div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Teaser</label>
+                <textarea id="previewTeaser" class="form-textarea" placeholder="Teaser..." rows="2"></textarea>
+              </div>
+            </div>
+
+            <!-- Right: HTML Preview -->
+            <div class="modal-right">
+              <div class="preview-live-label">Live Preview</div>
+              <div id="previewHtml" class="preview-html"></div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeBlogPreviewModal()">Cancel</button>
+            <button class="btn-warning" id="deletePostBtn" style="display: none;" onclick="deleteCurrentPost()">🗑️ Delete</button>
+            <button class="btn-primary" onclick="publishFromPreviewModal()">📤 Publish</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PREVIOUS POSTS PANEL -->
+      <div id="previousPostsPanel" class="previous-posts-panel" style="display: none;">
+        <div class="posts-header">
+          <div class="posts-title">Previous Posts</div>
+          <input type="text" id="postsSearch" class="posts-search" placeholder="Search posts...">
+        </div>
+        <div id="postsList" class="posts-list">
+          <div class="loading-msg">Loading posts...</div>
+        </div>
       </div>
 
       <script data-cfasync="false" src="./assets/email-decode.min.js"></script>
@@ -1707,8 +2131,315 @@ IMAGE: ${content.imagePath}`;
            `${API_BASE_URL}/api/expand` and includes the Authorization
            header. */
 
+        // ── TAB SWITCHING ──
+        let currentActiveTab = "expand";
+
+        function switchTab(tabName) {
+          currentActiveTab = tabName;
+          
+          // Update nav items
+          document.querySelectorAll(".nav-item").forEach((item, idx) => {
+            item.classList.remove("active");
+          });
+          
+          if (tabName === "expand") {
+            document.querySelectorAll(".nav-item")[0].classList.add("active");
+            document.querySelector(".main").style.display = "flex";
+            document.querySelector(".preview-panel").style.display = "flex";
+            document.getElementById("previousPostsPanel").style.display = "none";
+          } else if (tabName === "previousPosts") {
+            document.getElementById("previousPostsTab").classList.add("active");
+            document.querySelector(".main").style.display = "none";
+            document.querySelector(".preview-panel").style.display = "none";
+            document.getElementById("previousPostsPanel").style.display = "block";
+            loadPreviousPosts();
+          }
+        }
+
+        // ── MANUAL EDITOR MODAL ──
+        function openManualEditorModal() {
+          document.getElementById("manualEditorModal").classList.add("active");
+          resetManualEditor();
+        }
+
+        function closeManualEditorModal(event) {
+          if (event && event.target.id !== "manualEditorModal") return;
+          document.getElementById("manualEditorModal").classList.remove("active");
+        }
+
+        function resetManualEditor() {
+          document.getElementById("manualTitle").value = "";
+          document.getElementById("manualLead").value = "";
+          document.getElementById("manualSEO").value = "";
+          document.getElementById("manualTeaser").value = "";
+          document.getElementById("manualSections").innerHTML = `
+            <div class="section-editor">
+              <input type="text" class="form-input section-heading" placeholder="Section heading...">
+              <textarea class="form-textarea section-body" placeholder="Section content..." rows="3"></textarea>
+              <button class="btn-small-danger" onclick="removeSection(this)">Remove</button>
+            </div>
+          `;
+        }
+
+        function addSection() {
+          const container = document.getElementById("manualSections");
+          const newSection = document.createElement("div");
+          newSection.className = "section-editor";
+          newSection.innerHTML = `
+            <input type="text" class="form-input section-heading" placeholder="Section heading...">
+            <textarea class="form-textarea section-body" placeholder="Section content..." rows="3"></textarea>
+            <button class="btn-small-danger" onclick="removeSection(this)">Remove</button>
+          `;
+          container.appendChild(newSection);
+        }
+
+        function removeSection(btn) {
+          btn.parentElement.remove();
+        }
+
+        async function publishFromManualEditor() {
+          const sections = [];
+          document.querySelectorAll(".section-editor").forEach(editor => {
+            const heading = editor.querySelector(".section-heading").value;
+            const body = editor.querySelector(".section-body").value;
+            if (heading && body) {
+              sections.push({ heading, body });
+            }
+          });
+
+          const postData = {
+            title: document.getElementById("manualTitle").value || "Untitled",
+            slug: generateSlug(document.getElementById("manualTitle").value),
+            lead: document.getElementById("manualLead").value || "",
+            seo: document.getElementById("manualSEO").value || "",
+            teaser: document.getElementById("manualTeaser").value || "",
+            sections: sections,
+            date: new Date().toISOString().slice(0, 10)
+          };
+
+          if (!postData.title || postData.title === "Untitled") {
+            alert("Please enter a title");
+            return;
+          }
+
+          if (sections.length === 0) {
+            alert("Please add at least one section");
+            return;
+          }
+
+          try {
+            const response = await fetch(`${API_BASE_URL}/api/publish`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${adminPasscode}`,
+              },
+              body: JSON.stringify(postData),
+            });
+
+            if (!response.ok) {
+              throw new Error(`Failed to publish: ${response.status}`);
+            }
+
+            showToast();
+            closeManualEditorModal();
+            resetManualEditor();
+          } catch (error) {
+            alert("Publish failed: " + error.message);
+          }
+        }
+
+        // ── BLOG PREVIEW MODAL ──
+        let currentEditingSlug = null;
+
+        function openBlogPreviewModal(postData) {
+          currentEditingSlug = postData.slug;
+          
+          document.getElementById("previewTitle").value = postData.title || "";
+          document.getElementById("previewLead").value = postData.lead || "";
+          document.getElementById("previewSEO").value = postData.seo || "";
+          document.getElementById("previewTeaser").value = postData.teaser || "";
+          
+          // Render sections
+          const sectionsContainer = document.getElementById("previewSections");
+          sectionsContainer.innerHTML = "";
+          
+          if (postData.sections && Array.isArray(postData.sections)) {
+            postData.sections.forEach((section, idx) => {
+              const sectionDiv = document.createElement("div");
+              sectionDiv.className = "section-editor";
+              sectionDiv.innerHTML = `
+                <input type="text" class="form-input section-heading" placeholder="Section heading..." value="${escapeHtml(section.heading || "")}">
+                <textarea class="form-textarea section-body" placeholder="Section content..." rows="3">${escapeHtml(section.body || "")}</textarea>
+                <button class="btn-small-danger" onclick="removeSection(this)">Remove</button>
+              `;
+              sectionsContainer.appendChild(sectionDiv);
+            });
+          }
+          
+          // Show delete button if editing existing post
+          document.getElementById("deletePostBtn").style.display = currentEditingSlug ? "block" : "none";
+          
+          // Set up live preview
+          updateLivePreview();
+          
+          // Attach live preview listeners
+          document.getElementById("previewTitle").addEventListener("input", updateLivePreview);
+          document.getElementById("previewLead").addEventListener("input", updateLivePreview);
+          
+          document.getElementById("blogPreviewModal").classList.add("active");
+        }
+
+        function closeBlogPreviewModal(event) {
+          if (event && event.target.id !== "blogPreviewModal") return;
+          document.getElementById("blogPreviewModal").classList.remove("active");
+          currentEditingSlug = null;
+        }
+
+        function updateLivePreview() {
+          const title = document.getElementById("previewTitle").value;
+          const lead = document.getElementById("previewLead").value;
+          const sections = [];
+          
+          document.querySelectorAll("#previewSections .section-editor").forEach(editor => {
+            const heading = editor.querySelector(".section-heading").value;
+            const body = editor.querySelector(".section-body").value;
+            if (heading) {
+              sections.push({ heading, body });
+            }
+          });
+          
+          let html = "";
+          if (title) {
+            html += `<h2>${escapeHtml(title)}</h2>`;
+          }
+          if (lead) {
+            html += `<p><em>${escapeHtml(lead)}</em></p>`;
+          }
+          sections.forEach(s => {
+            html += `<h3>${escapeHtml(s.heading)}</h3>`;
+            if (s.body) {
+              html += `<p>${escapeHtml(s.body)}</p>`;
+            }
+          });
+          
+          document.getElementById("previewHtml").innerHTML = html || "<p style='color: var(--muted);'>Preview will appear here...</p>";
+        }
+
+        async function publishFromPreviewModal() {
+          const sections = [];
+          document.querySelectorAll("#previewSections .section-editor").forEach(editor => {
+            const heading = editor.querySelector(".section-heading").value;
+            const body = editor.querySelector(".section-body").value;
+            if (heading && body) {
+              sections.push({ heading, body });
+            }
+          });
+
+          const postData = {
+            title: document.getElementById("previewTitle").value || "Untitled",
+            slug: currentEditingSlug || generateSlug(document.getElementById("previewTitle").value),
+            lead: document.getElementById("previewLead").value || "",
+            seo: document.getElementById("previewSEO").value || "",
+            teaser: document.getElementById("previewTeaser").value || "",
+            sections: sections,
+            date: new Date().toISOString().slice(0, 10)
+          };
+
+          try {
+            const response = await fetch(`${API_BASE_URL}/api/publish`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${adminPasscode}`,
+              },
+              body: JSON.stringify(postData),
+            });
+
+            if (!response.ok) {
+              throw new Error(`Failed to publish: ${response.status}`);
+            }
+
+            showToast();
+            closeBlogPreviewModal();
+            currentEditingSlug = null;
+          } catch (error) {
+            alert("Publish failed: " + error.message);
+          }
+        }
+
+        async function deleteCurrentPost() {
+          if (!currentEditingSlug) {
+            alert("No post selected");
+            return;
+          }
+
+          if (!confirm(`Delete post "${document.getElementById("previewTitle").value}"?`)) {
+            return;
+          }
+
+          try {
+            const response = await fetch(`${API_BASE_URL}/api/posts/${currentEditingSlug}`, {
+              method: "DELETE",
+              headers: {
+                Authorization: `Bearer ${adminPasscode}`,
+              },
+            });
+
+            if (!response.ok) {
+              throw new Error(`Failed to delete: ${response.status}`);
+            }
+
+            alert("Post deleted");
+            closeBlogPreviewModal();
+            loadPreviousPosts();
+          } catch (error) {
+            alert("Delete failed: " + error.message);
+          }
+        }
+
+        // ── PREVIOUS POSTS ──
+        async function loadPreviousPosts() {
+          const postsList = document.getElementById("postsList");
+          postsList.innerHTML = '<div class="loading-msg">Loading posts...</div>';
+
+          try {
+            const response = await fetch(`${API_BASE_URL}/api/posts`, {
+              headers: {
+                Authorization: `Bearer ${adminPasscode}`,
+              },
+            });
+
+            if (!response.ok) {
+              throw new Error(`Failed to load posts: ${response.status}`);
+            }
+
+            const posts = await response.json();
+
+            if (!posts || posts.length === 0) {
+              postsList.innerHTML = '<div class="loading-msg">No posts yet</div>';
+              return;
+            }
+
+            postsList.innerHTML = "";
+            posts.forEach(post => {
+              const postItem = document.createElement("div");
+              postItem.className = "post-item";
+              postItem.innerHTML = `
+                <div class="post-item-title">${escapeHtml(post.title || "Untitled")}</div>
+                <div class="post-item-date">${post.date || "No date"}</div>
+              `;
+              postItem.onclick = () => openBlogPreviewModal(post);
+              postsList.appendChild(postItem);
+            });
+          } catch (error) {
+            postsList.innerHTML = `<div class="loading-msg">Error: ${error.message}</div>`;
+          }
+        }
+
         // ── INITIALIZATION ──
         selectMode("smart");
+
       </script>
     </div>
     <!-- END MAIN CONTENT -->
