@@ -1,33 +1,6 @@
 {
   "posts": [
     {
-      "slug": "the-subtle-revolution-of-robotic-hands-a-new-chapter-in-tech",
-      "title": "The Subtle Revolution of Robotic Hands: A New Chapter in Technology",
-      "lead": "The image of Thing from the Addams Family, a disembodied hand scuttling across the floor, is a strange yet fascinating memory that many of us share. Recently, this whimsical scene found a new echo in reality, courtesy of researchers at the University of Cambridge.",
-      "teaser": "Discover how a new robotic hand design is subtly reshaping the landscape of technology and industry.",
-      "date": "2026-02-18",
-      "seo": "Explore the quiet evolution of robotic hands, their potential to transform industries, and the intriguing path they might carve into the future.",
-      "sections": [
-        {
-          "heading": "The Part Most People Aren't Watching",
-          "body": "While the public eye often gazes at grand technological innovations, there are subtler developments quietly reshaping our interaction with technology. The new robotic hand from Cambridge has slipped under the radar for many, likely overshadowed by flashier advancements. Yet, its potential to navigate tight, inaccessible spaces marks a quiet but significant shift... one that could redefine how we approach problem-solving in physical environments."
-        },
-        {
-          "heading": "What's Actually Changing",
-          "body": "The essence of this innovation lies in its ability to operate independently of a traditional robotic arm. Unlike its predecessors, this hand can crawl, inspect, and manipulate objects in spaces that were previously off-limits—or at least, not without significant effort. It's a step away from making robots larger and more cumbersome, pivoting instead towards miniaturization and precision.\n\nThis robotic hand doesn't merely replicate human dexterity; it extends it. By navigating spaces behind panels or inside walls, it offers a new level of access. This represents a departure from the conventional approach of dismantling equipment for inspection or repair. Instead, the hand can be dispatched directly to the source of a problem, minimizing disruption and downtime."
-        },
-        {
-          "heading": "Why This Actually Matters",
-          "body": "The implications of this technological shift are broad, particularly for industries that rely on physical inspection and maintenance. Tradespeople often spend significant time disassembling equipment, a process that is both time-consuming and costly. With robotic hands, the potential to streamline these tasks is tangible, offering a tool that complements rather than replaces human skill.\n\nYet, it's important to be realistic about the limitations. While this technology can extend human reach, it doesn't replace the nuanced judgment and decision-making capabilities of skilled workers. Instead, it can enhance efficiency, allowing human effort to be focused where it's most needed.\n\nFurthermore, the move towards smaller, more targeted robotic solutions aligns with a broader trend of precision in technology. As industries seek to become more efficient and less invasive in their operations, tools like this robotic hand become increasingly relevant."
-        },
-        {
-          "heading": "Where This Quietly Leads",
-          "body": "Looking ahead, the evolution of robotic hands may herald a future where robots seamlessly integrate into various facets of industry, augmenting human capability rather than competing with it. This technology hints at a future where tools are not merely extensions of our hands, but extensions of our ability to solve problems efficiently.\n\nThe trajectory is not one of sweeping change but rather a series of incremental improvements that collectively could redefine our relationship with technology. It's a future that quietly beckons... promising enhancements not through displacement, but through collaboration."
-        }
-      ],
-      "image_path": "the-subtle-revolution-of-robotic-hands-a-new-chapter-in-tech.jpeg"
-    },
-    {
       "slug": "the-subtle-evolution-of-robotics-a-new-kind-of-hand",
       "title": "The Subtle Evolution of Robotics: A New Kind of Hand",
       "lead": "In a world where technology continuously reshapes our daily lives, the recent unveiling of a new robotic hand design by researchers at the University of Cambridge serves as a quiet yet profound reminder of the potential for innovation. This development, reminiscent of the animated hand from the Addams Family, invites us to reconsider not just the capabilities of robotics, but the very spaces they are designed to navigate.",
