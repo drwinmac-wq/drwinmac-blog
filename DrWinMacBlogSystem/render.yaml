@@ -6,7 +6,8 @@ services:
     plan: standard
 
     # Build and start configuration
-    buildCommand: cd DrWinMacBlogSystem && pip install -r requirements.txt
+    # Force rebuild: Ensure all dependencies are installed
+    buildCommand: cd DrWinMacBlogSystem && pip install --upgrade pip && pip install -r requirements.txt
     startCommand: cd DrWinMacBlogSystem && gunicorn app:app --workers=2 --worker-class sync --timeout=120
 
     # Health check
