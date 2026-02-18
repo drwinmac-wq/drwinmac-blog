@@ -15,6 +15,7 @@ Features:
 import os
 import re
 import json
+import base64
 import asyncio
 import logging
 from datetime import datetime, timedelta
@@ -240,6 +241,14 @@ def api_upload_image():
 
     f.save(dest)
     logger.info(f'✅ Image uploaded: {dest}')
+
+    # Commit image to GitHub so it persists and triggers FTP deploy
+    if publisher:
+        with open(dest, 'rb') as img_file:
+            img_b64 = base64.b64encode(img_file.read()).decode('utf-8')
+        github_path = f'assets/blog/{safe_name}'
+        publisher._github_commit_binary(github_path, img_b64, f'Upload blog image: {safe_name}')
+
     return jsonify({'success': True, 'filename': safe_name})
 
 

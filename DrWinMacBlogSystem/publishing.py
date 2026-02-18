@@ -102,6 +102,64 @@ class BlogPublisher:
             logger.error(f"GitHub commit error: {e}")
             return False
 
+    def _github_commit_binary(self, filepath: str, b64_content: str, message: str) -> bool:
+        """Commit a pre-base64-encoded binary file (e.g. image) to GitHub."""
+        if not self.github_token:
+            logger.warning("GitHub token not configured — skipping binary commit")
+            return False
+        try:
+            url = f"{self.github_api}/repos/{self.github_repo}/contents/{filepath}"
+            headers = {
+                'Authorization': f'token {self.github_token}',
+                'Accept': 'application/vnd.github.v3+json'
+            }
+            sha = None
+            try:
+                resp = requests.get(url, headers=headers, timeout=10)
+                if resp.status_code == 200:
+                    sha = resp.json()['sha']
+            except:
+                pass
+            data = {
+                'message': message,
+                'content': b64_content,
+                'branch': 'main'
+            }
+            if sha:
+                data['sha'] = sha
+            resp = requests.put(url, json=data, headers=headers, timeout=30)
+            if resp.status_code in [200, 201]:
+                logger.info(f"✓ Committed binary to GitHub: {filepath}")
+                return True
+            else:
+                logger.error(f"GitHub binary commit failed ({resp.status_code}): {resp.text[:300]}")
+                return False
+        except Exception as e:
+            logger.error(f"GitHub binary commit error: {e}")
+            return False
+
+    def _trigger_workflow_dispatch(self) -> bool:
+        """Trigger the GitHub Actions deploy workflow via workflow_dispatch event."""
+        if not self.github_token:
+            return False
+        try:
+            url = f"{self.github_api}/repos/{self.github_repo}/actions/workflows/deploy.yml/dispatches"
+            headers = {
+                'Authorization': f'token {self.github_token}',
+                'Accept': 'application/vnd.github.v3+json'
+            }
+            data = {'ref': 'main'}
+            resp = requests.post(url, json=data, headers=headers, timeout=10)
+            if resp.status_code == 204:
+                logger.info("✓ Triggered GitHub Actions deploy workflow")
+                return True
+            else:
+                logger.warning(f"workflow_dispatch returned {resp.status_code}: {resp.text[:200]}")
+                return False
+        except Exception as e:
+            logger.error(f"workflow_dispatch error: {e}")
+            return False
+
     # ── HTML Generation ──────────────────────────────────────────────────────
 
     def generate_html(self, post_data: Dict) -> str:
@@ -481,6 +539,9 @@ class BlogPublisher:
         self._github_commit('blog/index.html', index_html, 'Update blog index')
         metadata_json = json.dumps(self.metadata, indent=2, ensure_ascii=False)
         self._github_commit('blog/metadata.json', metadata_json, 'Update blog metadata')
+
+        # Trigger FTP deploy workflow (in case push event doesn't fire from API commits)
+        self._trigger_workflow_dispatch()
 
     # ── Post listing ─────────────────────────────────────────────────────────
 
