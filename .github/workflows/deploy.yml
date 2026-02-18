@@ -26,8 +26,7 @@ jobs:
           port: 21
           local-dir: ./
           server-dir: /
-          dangerous-clean-slate: true
-          log-level: verbose
+          log-level: standard
           exclude: |
             **/.git*
             **/.git*/**
