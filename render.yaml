@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: drwinmac-blog-api
+    runtime: python
+    pythonVersion: 3.11
+    plan: free
+
+    # Build and start from DrWinMacBlogSystem directory
+    buildCommand: cd DrWinMacBlogSystem && pip install -r requirements.txt
+    startCommand: cd DrWinMacBlogSystem && gunicorn app:app --workers=1 --worker-class sync --timeout=120
+
+    # Health check
+    healthCheckPath: /api/status
+    healthCheckInterval: 30
+
+    # Environment variables (set these in Render dashboard, not here)
+    envVars:
+      - key: FLASK_ENV
+        value: production

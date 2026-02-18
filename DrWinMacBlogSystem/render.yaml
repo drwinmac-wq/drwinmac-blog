@@ -6,8 +6,8 @@ services:
     plan: standard
 
     # Build and start configuration
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --workers=2 --worker-class sync --timeout=120
+    buildCommand: cd DrWinMacBlogSystem && pip install -r requirements.txt
+    startCommand: cd DrWinMacBlogSystem && gunicorn app:app --workers=2 --worker-class sync --timeout=120
 
     # Health check
     healthCheckPath: /api/status
