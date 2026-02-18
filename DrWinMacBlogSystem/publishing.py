@@ -193,10 +193,11 @@ class BlogPublisher:
             # Split multi-paragraph bodies into proper <p> tags
             paragraphs = [p.strip() for p in body.split('\n\n') if p.strip()]
             body_html  = '\n'.join(f'<p>{p}</p>' for p in paragraphs) if paragraphs else f'<p>{body}</p>'
+            heading_html = f'<h2 class="post-section-heading">{heading}</h2>\n        ' if heading else ''
             sections_html += f'''
     <section class="section post-section">
         <div class="container">
-            {body_html}
+            {heading_html}{body_html}
         </div>
     </section>
 '''

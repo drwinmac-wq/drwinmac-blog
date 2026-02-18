@@ -2099,19 +2099,28 @@ Modern AI data centers require massive electricity and significant water for coo
           thumb.style.display = "block";
         }
 
-        // Uploads file to API and returns the saved filename, or null on cancel/error
+        // Pending image file carried from Manual Editor into the Preview Modal
+        let _pendingImageFile = null;
+
+        // Uploads file to API and returns the saved filename, or null if no file chosen
+        // slugHint is used as the SEO filename (e.g. "my-post-slug")
         async function uploadImageIfSelected(
           fileInputId,
           nameInputId,
-          titleHint
+          slugHint
         ) {
+          // Check the explicit input first; fall back to the pending file carried
+          // from the Manual Editor if the preview modal input is empty
           const fileInput = document.getElementById(fileInputId);
-          const file = fileInput.files && fileInput.files[0];
-          if (!file) return null; // no new file chosen — keep existing value
+          const file = (fileInput && fileInput.files && fileInput.files[0])
+            || _pendingImageFile;
+          _pendingImageFile = null; // consume it either way
+          if (!file) return null; // no file anywhere — keep existing value
 
           const formData = new FormData();
           formData.append("file", file);
-          if (titleHint) formData.append("title", titleHint);
+          // Use slug for the SEO-friendly filename
+          if (slugHint) formData.append("title", slugHint);
 
           const res = await fetch(`${API_BASE_URL}/api/upload-image`, {
             method: "POST",
@@ -2120,7 +2129,7 @@ Modern AI data centers require massive electricity and significant water for coo
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || res.status);
-          document.getElementById(nameInputId).value = data.filename;
+          if (nameInputId) document.getElementById(nameInputId).value = data.filename;
           showToast("✓ Image uploaded: " + data.filename);
           return data.filename;
         }
@@ -2680,17 +2689,11 @@ IMAGE: ${content.imagePath}`;
         }
 
         async function publishFromManualEditor() {
-          // Upload image first if a new file was chosen
-          const title = document.getElementById("manualTitle").value.trim();
-          try {
-            await uploadImageIfSelected(
-              "manualImageFile",
-              "manualImage",
-              title
-            );
-          } catch (err) {
-            alert("Image upload failed: " + err.message);
-            return;
+          // Stash any chosen file so the preview modal picks it up on Publish
+          // (no upload yet — we want the slug locked in first)
+          const fileInput = document.getElementById("manualImageFile");
+          if (fileInput && fileInput.files && fileInput.files[0]) {
+            _pendingImageFile = fileInput.files[0];
           }
           previewManualPost();
         }
@@ -2757,6 +2760,7 @@ IMAGE: ${content.imagePath}`;
             .getElementById("blogPreviewModal")
             .classList.remove("active");
           currentEditingSlug = null;
+          _pendingImageFile = null; // discard any un-uploaded pending image
         }
 
         function updateLivePreview() {
@@ -2807,13 +2811,16 @@ IMAGE: ${content.imagePath}`;
         async function publishFromPreviewModal() {
           const title = document.getElementById("previewTitle").value.trim();
 
-          // Upload image first if a new file was chosen; otherwise keep existing filename
+          // Slug is locked-in from when the modal opened — use it for SEO image naming too
+          const slug = currentEditingSlug || generateSlug(title);
+
+          // Upload image if a new file was chosen in the modal OR carried from Manual Editor
           let imagePath = document.getElementById("previewImage").value.trim();
           try {
             const uploaded = await uploadImageIfSelected(
               "previewImageFile",
               "previewImage",
-              title
+              slug
             );
             if (uploaded) imagePath = uploaded;
           } catch (err) {
@@ -2831,9 +2838,6 @@ IMAGE: ${content.imagePath}`;
                 sections.push({ heading, body });
               }
             });
-
-          // Use the locked-in slug from when the modal was opened — never regenerate
-          const slug = currentEditingSlug || generateSlug(title);
 
           const postData = {
             title: title || "Untitled",
