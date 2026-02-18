@@ -17,3 +17,5 @@ services:
     envVars:
       - key: FLASK_ENV
         value: production
+      - key: GITHUB_REPO
+        value: drwinmac-wq/drwinmac-blog

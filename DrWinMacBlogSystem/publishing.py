@@ -477,6 +477,11 @@ class BlogPublisher:
             f.write(index_html)
         logger.info(f"blog/index.html regenerated ({len(posts)} posts)")
 
+        # Commit index.html and metadata.json to GitHub
+        self._github_commit('blog/index.html', index_html, 'Update blog index')
+        metadata_json = json.dumps(self.metadata, indent=2, ensure_ascii=False)
+        self._github_commit('blog/metadata.json', metadata_json, 'Update blog metadata')
+
     # ── Post listing ─────────────────────────────────────────────────────────
 
     def list_posts(self) -> List[Dict]:
