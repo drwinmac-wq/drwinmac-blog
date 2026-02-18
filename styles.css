@@ -814,7 +814,7 @@ body.curriculum .small {
   height: 44px;
   padding: 0;
   border: 0;
-  background: rgba(17, 24, 39, 0.10);
+  background: rgba(17, 24, 39, 0.1);
   border-radius: 8px;
   cursor: pointer;
 }

@@ -17,6 +17,13 @@ jobs:
       - name: Show deployed commit
         run: git log -1 --oneline
 
+      - name: Ensure assets/blog directory exists on server
+        run: |
+          sudo apt-get install -y lftp -q
+          lftp -e "mkdir -p assets/blog; quit" \
+            -u "${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }}" \
+            ${{ secrets.FTP_HOST }} || true
+
       - name: Deploy to Namecheap via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:

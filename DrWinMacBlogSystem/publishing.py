@@ -400,7 +400,11 @@ class BlogPublisher:
         Rebuild /blog/index.html from metadata.json.
         This is a full replacement — no marker comment needed.
         """
-        posts = self.metadata.get('posts', [])
+        posts = sorted(
+            self.metadata.get('posts', []),
+            key=lambda p: p.get('date', ''),
+            reverse=True
+        )
 
         cards_html = ''
         for post in posts:

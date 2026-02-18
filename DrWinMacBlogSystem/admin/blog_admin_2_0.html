@@ -1880,10 +1880,19 @@ Modern AI data centers require massive electricity and significant water for coo
             </div>
 
             <div class="btn-row">
-              <button class="btn-primary" style="flex:1" onclick="publishFromManualEditor()">
+              <button
+                class="btn-primary"
+                style="flex: 1"
+                onclick="publishFromManualEditor()"
+              >
                 👁 Preview
               </button>
-              <button class="btn-secondary" id="regenerateBtn" style="flex:1" onclick="regenerateManualPost()">
+              <button
+                class="btn-secondary"
+                id="regenerateBtn"
+                style="flex: 1"
+                onclick="regenerateManualPost()"
+              >
                 🔄 Regenerate
               </button>
               <button class="btn-secondary" onclick="clearManualEditor()">
@@ -1939,16 +1948,38 @@ Modern AI data centers require massive electricity and significant water for coo
         id="readonlyPreviewModal"
         onclick="closeReadonlyPreview(event)"
       >
-        <div class="modal-content" style="max-width:720px;max-height:90vh;display:flex;flex-direction:column;" onclick="event.stopPropagation()">
+        <div
+          class="modal-content"
+          style="
+            max-width: 720px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+          "
+          onclick="event.stopPropagation()"
+        >
           <div class="modal-header">
             <div class="modal-title">Post Preview</div>
-            <button class="modal-close" onclick="closeReadonlyPreview()">✕</button>
+            <button class="modal-close" onclick="closeReadonlyPreview()">
+              ✕
+            </button>
           </div>
-          <div class="modal-body" id="readonlyPreviewBody" style="overflow-y:auto;padding:24px 28px;flex:1;">
-          </div>
+          <div
+            class="modal-body"
+            id="readonlyPreviewBody"
+            style="overflow-y: auto; padding: 24px 28px; flex: 1"
+          ></div>
           <div class="modal-footer">
-            <button class="btn-secondary" onclick="closeReadonlyPreview()">Cancel</button>
-            <button class="btn-primary" id="readonlyPublishBtn" onclick="publishFromReadonlyPreview()">📤 Publish</button>
+            <button class="btn-secondary" onclick="closeReadonlyPreview()">
+              Cancel
+            </button>
+            <button
+              class="btn-primary"
+              id="readonlyPublishBtn"
+              onclick="publishFromReadonlyPreview()"
+            >
+              📤 Publish
+            </button>
           </div>
         </div>
       </div>
@@ -1980,11 +2011,7 @@ Modern AI data centers require massive electricity and significant water for coo
               </div>
               <div class="form-group">
                 <label class="form-label">Date</label>
-                <input
-                  type="date"
-                  id="previewDate"
-                  class="form-input"
-                />
+                <input type="date" id="previewDate" class="form-input" />
               </div>
               <div class="form-group">
                 <label class="form-label">Lead</label>
@@ -2740,60 +2767,86 @@ IMAGE: ${content.imagePath}`;
         function openReadonlyPreview() {
           // Collect current manual editor state
           const sections = [];
-          document.querySelectorAll("#manualSectionsInline .manual-section-editor").forEach((ed) => {
-            const h = ed.querySelector(".section-heading").value.trim();
-            const b = ed.querySelector(".section-body").value.trim();
-            if (h || b) sections.push({ heading: h, body: b });
-          });
-          const title = document.getElementById("manualTitle").value.trim() || "Untitled";
+          document
+            .querySelectorAll("#manualSectionsInline .manual-section-editor")
+            .forEach((ed) => {
+              const h = ed.querySelector(".section-heading").value.trim();
+              const b = ed.querySelector(".section-body").value.trim();
+              if (h || b) sections.push({ heading: h, body: b });
+            });
+          const title =
+            document.getElementById("manualTitle").value.trim() || "Untitled";
           _readonlyPostData = {
             title,
-            slug: document.getElementById("manualSlug").value || generateSlug(title),
+            slug:
+              document.getElementById("manualSlug").value ||
+              generateSlug(title),
             lead: document.getElementById("manualLead").value.trim(),
             seo: document.getElementById("manualSEO").value.trim(),
             teaser: document.getElementById("manualTeaser").value.trim(),
             image_path: document.getElementById("manualImage").value.trim(),
             sections,
-            date: document.getElementById("manualDate").value || new Date().toISOString().slice(0, 10),
+            date:
+              document.getElementById("manualDate").value ||
+              new Date().toISOString().slice(0, 10),
           };
 
           // Build read-only HTML
           const imgSrc = _pendingImageFile
             ? URL.createObjectURL(_pendingImageFile)
-            : (_readonlyPostData.image_path
-                ? ((_readonlyPostData.image_path.startsWith('http') || _readonlyPostData.image_path.startsWith('/'))
-                    ? _readonlyPostData.image_path
-                    : `https://drwinmac.tech/assets/blog/${_readonlyPostData.image_path}`)
-                : null);
+            : _readonlyPostData.image_path
+            ? _readonlyPostData.image_path.startsWith("http") ||
+              _readonlyPostData.image_path.startsWith("/")
+              ? _readonlyPostData.image_path
+              : `https://drwinmac.tech/assets/blog/${_readonlyPostData.image_path}`
+            : null;
 
-          let html = '';
+          let html = "";
           if (imgSrc) {
             html += `<img src="${imgSrc}" alt="" style="width:100%;max-height:340px;object-fit:cover;border-radius:10px;margin-bottom:20px;">`;
           }
-          html += `<h2 style="font-size:22px;font-weight:800;margin:0 0 10px;line-height:1.25;">${escapeHtml(_readonlyPostData.title)}</h2>`;
+          html += `<h2 style="font-size:22px;font-weight:800;margin:0 0 10px;line-height:1.25;">${escapeHtml(
+            _readonlyPostData.title
+          )}</h2>`;
           html += `<p style="font-size:13px;color:var(--muted);margin-bottom:18px;">${_readonlyPostData.date}</p>`;
           if (_readonlyPostData.lead) {
-            html += `<p style="font-style:italic;margin-bottom:20px;line-height:1.7;">${escapeHtml(_readonlyPostData.lead)}</p>`;
+            html += `<p style="font-style:italic;margin-bottom:20px;line-height:1.7;">${escapeHtml(
+              _readonlyPostData.lead
+            )}</p>`;
           }
           _readonlyPostData.sections.forEach((s) => {
-            if (s.heading) html += `<h3 style="font-size:15px;font-weight:700;color:#6ee7b7;margin:20px 0 8px;">${escapeHtml(s.heading)}</h3>`;
+            if (s.heading)
+              html += `<h3 style="font-size:15px;font-weight:700;color:#6ee7b7;margin:20px 0 8px;">${escapeHtml(
+                s.heading
+              )}</h3>`;
             if (s.body) {
-              s.body.split('\n\n').filter(p => p.trim()).forEach(p => {
-                html += `<p style="margin-bottom:12px;line-height:1.7;">${escapeHtml(p.trim())}</p>`;
-              });
+              s.body
+                .split("\n\n")
+                .filter((p) => p.trim())
+                .forEach((p) => {
+                  html += `<p style="margin-bottom:12px;line-height:1.7;">${escapeHtml(
+                    p.trim()
+                  )}</p>`;
+                });
             }
           });
           if (_readonlyPostData.teaser) {
-            html += `<p style="margin-top:24px;font-style:italic;color:var(--muted);border-top:1px solid var(--border);padding-top:16px;">${escapeHtml(_readonlyPostData.teaser)}</p>`;
+            html += `<p style="margin-top:24px;font-style:italic;color:var(--muted);border-top:1px solid var(--border);padding-top:16px;">${escapeHtml(
+              _readonlyPostData.teaser
+            )}</p>`;
           }
 
           document.getElementById("readonlyPreviewBody").innerHTML = html;
-          document.getElementById("readonlyPreviewModal").classList.add("active");
+          document
+            .getElementById("readonlyPreviewModal")
+            .classList.add("active");
         }
 
         function closeReadonlyPreview(event) {
           if (event && event.target.id !== "readonlyPreviewModal") return;
-          document.getElementById("readonlyPreviewModal").classList.remove("active");
+          document
+            .getElementById("readonlyPreviewModal")
+            .classList.remove("active");
           _readonlyPostData = null;
           _pendingImageFile = null;
         }
@@ -2832,10 +2885,13 @@ IMAGE: ${content.imagePath}`;
               },
               body: JSON.stringify(postData),
             });
-            if (!response.ok) throw new Error(`Failed to publish: ${response.status}`);
+            if (!response.ok)
+              throw new Error(`Failed to publish: ${response.status}`);
 
             showToast("✓ Post published successfully!");
-            document.getElementById("readonlyPreviewModal").classList.remove("active");
+            document
+              .getElementById("readonlyPreviewModal")
+              .classList.remove("active");
             _readonlyPostData = null;
             if (currentActiveTab === "previousPosts") loadPreviousPosts();
           } catch (error) {
@@ -2854,21 +2910,27 @@ IMAGE: ${content.imagePath}`;
           const teaser = document.getElementById("manualTeaser").value.trim();
 
           const sections = [];
-          document.querySelectorAll("#manualSectionsInline .manual-section-editor").forEach((ed) => {
-            const h = ed.querySelector(".section-heading").value.trim();
-            const b = ed.querySelector(".section-body").value.trim();
-            if (h || b) sections.push({ heading: h, body: b });
-          });
+          document
+            .querySelectorAll("#manualSectionsInline .manual-section-editor")
+            .forEach((ed) => {
+              const h = ed.querySelector(".section-heading").value.trim();
+              const b = ed.querySelector(".section-body").value.trim();
+              if (h || b) sections.push({ heading: h, body: b });
+            });
 
           if (!lead && sections.length === 0) {
-            alert("Nothing to regenerate — fill in the Lead and Sections first.");
+            alert(
+              "Nothing to regenerate — fill in the Lead and Sections first."
+            );
             return;
           }
 
-          const model = document.getElementById("modelSelect")?.value || "gpt-4o";
+          const model =
+            document.getElementById("modelSelect")?.value || "gpt-4o";
 
           btn.disabled = true;
-          btn.innerHTML = '<div class="loading-spinner" style="display:inline-block;width:14px;height:14px;margin-right:6px;"></div>Regenerating...';
+          btn.innerHTML =
+            '<div class="loading-spinner" style="display:inline-block;width:14px;height:14px;margin-right:6px;"></div>Regenerating...';
 
           try {
             const response = await fetch(`${API_BASE_URL}/api/regenerate`, {
@@ -2891,10 +2953,13 @@ IMAGE: ${content.imagePath}`;
             document.getElementById("manualLead").value = refined.lead || lead;
 
             // Update Teaser
-            document.getElementById("manualTeaser").value = refined.teaser || teaser;
+            document.getElementById("manualTeaser").value =
+              refined.teaser || teaser;
 
             // Update Sections — match by heading, fall back to index
-            const editors = document.querySelectorAll("#manualSectionsInline .manual-section-editor");
+            const editors = document.querySelectorAll(
+              "#manualSectionsInline .manual-section-editor"
+            );
             (refined.sections || []).forEach((sec, idx) => {
               const editor = editors[idx];
               if (editor) {
@@ -3088,7 +3153,9 @@ IMAGE: ${content.imagePath}`;
             teaser: document.getElementById("previewTeaser").value || "",
             image_path: imagePath,
             sections,
-            date: document.getElementById("previewDate").value || new Date().toISOString().slice(0, 10),
+            date:
+              document.getElementById("previewDate").value ||
+              new Date().toISOString().slice(0, 10),
           };
 
           try {
@@ -3170,7 +3237,13 @@ IMAGE: ${content.imagePath}`;
               throw new Error(`Failed to load posts: ${response.status}`);
 
             const rawData = await response.json();
-            const posts = rawData.posts || rawData;
+            const rawPosts = rawData.posts || rawData;
+            // Sort newest-to-oldest by date
+            const posts = [...(rawPosts || [])].sort((a, b) => {
+              const da = a.date || "";
+              const db = b.date || "";
+              return db.localeCompare(da);
+            });
 
             // Cache all posts by slug for safe retrieval
             Object.keys(postsCache).forEach((k) => delete postsCache[k]);
