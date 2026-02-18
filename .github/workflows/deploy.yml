@@ -26,6 +26,7 @@ jobs:
           port: 21
           local-dir: ./
           server-dir: /public_html/
+          log-level: verbose
           exclude: |
             **/.git*
             **/.git*/**
