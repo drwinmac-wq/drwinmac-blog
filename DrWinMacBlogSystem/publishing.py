@@ -539,9 +539,7 @@ class BlogPublisher:
         self._github_commit('blog/index.html', index_html, 'Update blog index')
         metadata_json = json.dumps(self.metadata, indent=2, ensure_ascii=False)
         self._github_commit('blog/metadata.json', metadata_json, 'Update blog metadata')
-
-        # Trigger FTP deploy workflow (in case push event doesn't fire from API commits)
-        self._trigger_workflow_dispatch()
+        # The push event on each commit above will trigger the GitHub Actions FTP deploy
 
     # ── Post listing ─────────────────────────────────────────────────────────
 
