@@ -1509,7 +1509,7 @@ Modern AI data centers require massive electricity and significant water for coo
 
               <div class="expand-options">
                 <div
-                  class="expand-option active"
+                  class="expand-option"
                   onclick="toggleOption(this)"
                   data-option="research"
                 >
@@ -1520,35 +1520,35 @@ Modern AI data centers require massive electricity and significant water for coo
                 </div>
 
                 <div
-                  class="expand-option active"
+                  class="expand-option"
                   onclick="toggleOption(this)"
                   data-option="voice"
                 >
                   <div class="expand-option-label">Voice Matching</div>
                   <div class="expand-option-desc">
-                    Book-style cadence &amp; tone
+                    Lock to 4-part Dr.WinMac structure
                   </div>
                 </div>
 
                 <div
-                  class="expand-option active"
+                  class="expand-option"
                   onclick="toggleOption(this)"
                   data-option="sections"
                 >
                   <div class="expand-option-label">Section Mapping</div>
                   <div class="expand-option-desc">
-                    Auto-structure to template
+                    Single unlabeled prose section
                   </div>
                 </div>
 
                 <div
-                  class="expand-option active"
+                  class="expand-option"
                   onclick="toggleOption(this)"
                   data-option="cta"
                 >
                   <div class="expand-option-label">Smart CTA</div>
                   <div class="expand-option-desc">
-                    Educational-appropriate CTA
+                    Add closing statement field
                   </div>
                 </div>
               </div>
@@ -1805,6 +1805,29 @@ Modern AI data centers require massive electricity and significant water for coo
               </button>
             </div>
 
+            <div id="manualCtaSection" class="input-section" style="display:none;">
+              <div class="input-label">Closing Statement (CTA)</div>
+              <textarea
+                id="manualCta"
+                class="form-textarea"
+                placeholder="A grounded, low-pressure closing line inviting the reader to act — book a session, reach out, explore more..."
+                rows="2"
+                style="
+                  width: 100%;
+                  background: rgba(10, 15, 30, 0.6);
+                  border: 1px solid var(--border);
+                  border-radius: 10px;
+                  padding: 16px;
+                  color: var(--text);
+                  font-family: var(--mono);
+                  font-size: 13px;
+                  line-height: 1.65;
+                  resize: vertical;
+                  outline: none;
+                "
+              ></textarea>
+            </div>
+
             <div class="input-section">
               <div class="input-label">Teaser</div>
               <textarea
@@ -1877,6 +1900,62 @@ Modern AI data centers require massive electricity and significant water for coo
                   border: 1px solid var(--border);
                 "
               />
+            </div>
+
+            <!-- Mode + Settings for Regenerate/Preview (mirrors AI Expansion) -->
+            <div class="input-section" style="padding-bottom:8px;">
+              <div class="input-label" style="margin-bottom:8px;">Mode &amp; Settings</div>
+              <div class="mode-selector" id="manualModeSelector" style="margin-bottom:8px;">
+                <button
+                  class="mode-btn active"
+                  onclick="selectManualMode('smart')"
+                  data-manual-mode="smart"
+                >⚡ Smart</button>
+                <button
+                  class="mode-btn"
+                  onclick="selectManualMode('research')"
+                  data-manual-mode="research"
+                >🔬 Research</button>
+                <button
+                  class="mode-btn"
+                  onclick="selectManualMode('voice')"
+                  data-manual-mode="voice"
+                >📝 Voice Only</button>
+              </div>
+              <div class="expand-options" id="manualExpandOptions">
+                <div
+                  class="expand-option"
+                  onclick="toggleManualOption(this)"
+                  data-manual-option="research"
+                >
+                  <div class="expand-option-label">Auto-Research</div>
+                  <div class="expand-option-desc">Pull supporting data</div>
+                </div>
+                <div
+                  class="expand-option"
+                  onclick="toggleManualOption(this)"
+                  data-manual-option="voice"
+                >
+                  <div class="expand-option-label">Voice Matching</div>
+                  <div class="expand-option-desc">Lock 4-part structure</div>
+                </div>
+                <div
+                  class="expand-option"
+                  onclick="toggleManualOption(this)"
+                  data-manual-option="sections"
+                >
+                  <div class="expand-option-label">Section Mapping</div>
+                  <div class="expand-option-desc">Single unlabeled section</div>
+                </div>
+                <div
+                  class="expand-option"
+                  onclick="toggleManualOption(this)"
+                  data-manual-option="cta"
+                >
+                  <div class="expand-option-label">Smart CTA</div>
+                  <div class="expand-option-desc">Add closing statement</div>
+                </div>
+              </div>
             </div>
 
             <div class="btn-row">
@@ -2226,11 +2305,11 @@ Modern AI data centers require massive electricity and significant water for coo
 
           const descriptions = {
             smart:
-              "OpenAI GPT-4o auto-research + voice expansion. Balances depth with readability.",
+              "Balanced depth + readability. GPT chooses 2–4 headings. Weaves in 2–3 supporting data points naturally.",
             research:
-              "Heavy research focus with GPT-4o. Deep technical context and multiple sources.",
+              "Deep research focus. Named companies, specific stats, dense sourcing. 1–2 GPT-chosen sections.",
             voice:
-              "Minimal research with GPT-4o. Focus on voice expansion and structure only.",
+              "Voice and narrative only. No data citations. Essayistic, reflective tone. 1–4 GPT-chosen sections.",
           };
 
           document.getElementById("modeDescription").textContent =
@@ -2331,7 +2410,8 @@ Modern AI data centers require massive electricity and significant water for coo
                 short_post: shortPost,
                 mode: currentMode,
                 model:
-                  document.getElementById("modelSelect")?.value || "gpt-4o",
+                  document.getElementById('modelSelect')?.value || 'gpt-4o',
+                settings: getActiveSettings(''),
               }),
             });
 
@@ -2532,6 +2612,7 @@ IMAGE: ${content.imagePath}`;
 
         function clearAll() {
           if (confirm("Clear all content?")) {
+            // AI Expansion field
             document.getElementById("shortPostInput").value = "";
             document.getElementById("previewBody").innerHTML = `
         <div class="placeholder-msg">
@@ -2540,6 +2621,41 @@ IMAGE: ${content.imagePath}`;
         </div>
       `;
             expandedContent = null;
+
+            // Manual Editor fields
+            document.getElementById("manualTitle").value = "";
+            document.getElementById("manualSlug").value = "";
+            document.getElementById("manualLead").value = "";
+            document.getElementById("manualSEO").value = "";
+            document.getElementById("manualTeaser").value = "";
+            document.getElementById("manualCta").value = "";
+            document.getElementById("manualImage").value = "";
+            const mt = document.getElementById("manualImageThumb");
+            if (mt) { mt.src = ""; mt.style.display = "none"; }
+            const mf = document.getElementById("manualImageFile");
+            if (mf) mf.value = "";
+            document.getElementById("manualDate").value = new Date().toISOString().slice(0, 10);
+            document.getElementById("manualSectionsInline").innerHTML = `
+              <div class="manual-section-editor">
+                <div class="section-num">Section 1</div>
+                <input type="text" class="form-input section-heading" value="The Part Most People Aren't Watching" placeholder="Section heading..." style="margin-bottom:10px;">
+                <textarea class="form-textarea section-body" placeholder="1–2 paragraphs..." rows="4" style="width:100%;"></textarea>
+              </div>
+              <div class="manual-section-editor">
+                <div class="section-num">Section 2</div>
+                <input type="text" class="form-input section-heading" value="What's Actually Changing" placeholder="Section heading..." style="margin-bottom:10px;">
+                <textarea class="form-textarea section-body" placeholder="2–3 paragraphs..." rows="4" style="width:100%;"></textarea>
+              </div>
+              <div class="manual-section-editor">
+                <div class="section-num">Section 3</div>
+                <input type="text" class="form-input section-heading" value="Why This Actually Matters" placeholder="Section heading..." style="margin-bottom:10px;">
+                <textarea class="form-textarea section-body" placeholder="2–3 paragraphs..." rows="4" style="width:100%;"></textarea>
+              </div>
+              <div class="manual-section-editor">
+                <div class="section-num">Section 4</div>
+                <input type="text" class="form-input section-heading" value="Where This Quietly Leads" placeholder="Section heading..." style="margin-bottom:10px;">
+                <textarea class="form-textarea section-body" placeholder="1–2 paragraphs..." rows="4" style="width:100%;"></textarea>
+              </div>`;
           }
         }
 
@@ -2566,12 +2682,15 @@ IMAGE: ${content.imagePath}`;
         // ── POPULATE MANUAL EDITOR FROM EXPANSION ──
         function populateManualEditor(expanded) {
           // Fill scalar fields
-          document.getElementById("manualTitle").value = expanded.title || "";
-          document.getElementById("manualSlug").value =
-            expanded.slug || generateSlug(expanded.title || "");
-          document.getElementById("manualLead").value = expanded.lead || "";
-          document.getElementById("manualSEO").value = expanded.seo || "";
-          document.getElementById("manualTeaser").value = expanded.teaser || "";
+          document.getElementById('manualTitle').value = expanded.title || '';
+          document.getElementById('manualSlug').value =
+            expanded.slug || generateSlug(expanded.title || '');
+          document.getElementById('manualLead').value = expanded.lead || '';
+          document.getElementById('manualSEO').value = expanded.seo || '';
+          document.getElementById('manualTeaser').value = expanded.teaser || '';
+          if (expanded.cta) {
+            document.getElementById('manualCta').value = expanded.cta;
+          }
 
           // Rebuild sections
           const container = document.getElementById("manualSectionsInline");
@@ -2633,6 +2752,62 @@ IMAGE: ${content.imagePath}`;
               "column";
             loadPreviousPosts();
           }
+        }
+
+        // ── MANUAL EDITOR MODE + SETTINGS ──
+        let currentManualMode = 'smart';
+
+        function selectManualMode(mode) {
+          currentManualMode = mode;
+          document.querySelectorAll('[data-manual-mode]').forEach(btn => btn.classList.remove('active'));
+          const btn = document.querySelector(`[data-manual-mode="${mode}"]`);
+          if (btn) btn.classList.add('active');
+        }
+
+        function toggleManualOption(el) {
+          el.classList.toggle('active');
+          // Smart CTA toggle controls CTA field visibility
+          if (el.dataset.manualOption === 'cta') {
+            const ctaSec = document.getElementById('manualCtaSection');
+            if (ctaSec) ctaSec.style.display = el.classList.contains('active') ? 'block' : 'none';
+          }
+          // Section Mapping wins over Voice Matching — mutually exclusive
+          if (el.dataset.manualOption === 'sections' && el.classList.contains('active')) {
+            document.querySelectorAll('[data-manual-option="voice"]').forEach(o => o.classList.remove('active'));
+          }
+          if (el.dataset.manualOption === 'voice' && el.classList.contains('active')) {
+            document.querySelectorAll('[data-manual-option="sections"]').forEach(o => o.classList.remove('active'));
+          }
+        }
+
+        // Mirror the same mutual-exclusion logic for AI Expansion toggles
+        function toggleOption(element) {
+          element.classList.toggle('active');
+          if (element.dataset.option === 'sections' && element.classList.contains('active')) {
+            document.querySelectorAll('[data-option="voice"]').forEach(o => o.classList.remove('active'));
+          }
+          if (element.dataset.option === 'voice' && element.classList.contains('active')) {
+            document.querySelectorAll('[data-option="sections"]').forEach(o => o.classList.remove('active'));
+          }
+          if (element.dataset.option === 'cta') {
+            // no AI expansion CTA field needed — only in Manual Editor
+          }
+        }
+
+        function getActiveSettings(prefix) {
+          // prefix = '' (AI Expansion) or 'manual-' (Manual Editor)
+          const attr = prefix ? 'data-manual-option' : 'data-option';
+          const settings = {};
+          document.querySelectorAll(`[${attr}]`).forEach(el => {
+            const key = el.dataset[prefix ? 'manualOption' : 'option'];
+            settings[key] = el.classList.contains('active');
+          });
+          return {
+            auto_research:   !!settings['research'],
+            voice_matching:  !!settings['voice'],
+            section_mapping: !!settings['sections'],
+            smart_cta:       !!settings['cta'],
+          };
         }
 
         // ── MANUAL EDITOR MODAL (legacy popup — kept for compat but not used) ──
@@ -2904,42 +3079,46 @@ IMAGE: ${content.imagePath}`;
 
         // ── REGENERATE ──
         async function regenerateManualPost() {
-          const btn = document.getElementById("regenerateBtn");
-          const title = document.getElementById("manualTitle").value.trim();
-          const lead = document.getElementById("manualLead").value.trim();
-          const teaser = document.getElementById("manualTeaser").value.trim();
+          const btn = document.getElementById('regenerateBtn');
+          const title = document.getElementById('manualTitle').value.trim();
+          const lead = document.getElementById('manualLead').value.trim();
+          const teaser = document.getElementById('manualTeaser').value.trim();
 
           const sections = [];
           document
-            .querySelectorAll("#manualSectionsInline .manual-section-editor")
+            .querySelectorAll('#manualSectionsInline .manual-section-editor')
             .forEach((ed) => {
-              const h = ed.querySelector(".section-heading").value.trim();
-              const b = ed.querySelector(".section-body").value.trim();
+              const h = ed.querySelector('.section-heading').value.trim();
+              const b = ed.querySelector('.section-body').value.trim();
               if (h || b) sections.push({ heading: h, body: b });
             });
 
           if (!lead && sections.length === 0) {
-            alert(
-              "Nothing to regenerate — fill in the Lead and Sections first."
-            );
+            alert('Nothing to regenerate — fill in the Lead and Sections first.');
             return;
           }
 
-          const model =
-            document.getElementById("modelSelect")?.value || "gpt-4o";
+          const model = document.getElementById('modelSelect')?.value || 'gpt-4o';
+          const settings = getActiveSettings('manual-');
+
+          // Clear fields first, then regenerate
+          document.getElementById('manualLead').value = '';
+          document.getElementById('manualTeaser').value = '';
+          document.getElementById('manualCta').value = '';
+          document.querySelectorAll('#manualSectionsInline .section-body')
+            .forEach(ta => { ta.value = ''; });
 
           btn.disabled = true;
-          btn.innerHTML =
-            '<div class="loading-spinner" style="display:inline-block;width:14px;height:14px;margin-right:6px;"></div>Regenerating...';
+          btn.innerHTML = '<div class="loading-spinner" style="display:inline-block;width:14px;height:14px;margin-right:6px;"></div>Regenerating...';
 
           try {
             const response = await fetch(`${API_BASE_URL}/api/regenerate`, {
-              method: "POST",
+              method: 'POST',
               headers: {
-                "Content-Type": "application/json",
+                'Content-Type': 'application/json',
                 Authorization: `Bearer ${adminPasscode}`,
               },
-              body: JSON.stringify({ title, lead, sections, teaser, model }),
+              body: JSON.stringify({ title, lead, sections, teaser, model, mode: currentManualMode, settings }),
             });
 
             if (!response.ok) {
@@ -2949,30 +3128,38 @@ IMAGE: ${content.imagePath}`;
 
             const refined = await response.json();
 
-            // Update Lead
-            document.getElementById("manualLead").value = refined.lead || lead;
+            // Populate Lead
+            document.getElementById('manualLead').value = refined.lead || '';
 
-            // Update Teaser
-            document.getElementById("manualTeaser").value =
-              refined.teaser || teaser;
+            // Populate Teaser
+            document.getElementById('manualTeaser').value = refined.teaser || '';
 
-            // Update Sections — match by heading, fall back to index
-            const editors = document.querySelectorAll(
-              "#manualSectionsInline .manual-section-editor"
-            );
+            // Populate CTA if present
+            if (refined.cta) {
+              document.getElementById('manualCta').value = refined.cta;
+            }
+
+            // Rebuild Sections fresh
+            const container = document.getElementById('manualSectionsInline');
+            container.innerHTML = '';
             (refined.sections || []).forEach((sec, idx) => {
-              const editor = editors[idx];
-              if (editor) {
-                editor.querySelector(".section-body").value = sec.body || "";
-              }
+              const div = document.createElement('div');
+              div.className = 'manual-section-editor';
+              div.innerHTML = `
+                <div class="section-num">Section ${idx + 1}</div>
+                <input type="text" class="form-input section-heading" placeholder="Section heading..." style="margin-bottom:10px;" value="${escapeHtml(sec.heading || '')}">
+                <textarea class="form-textarea section-body" placeholder="Section content..." rows="4" style="width:100%;">${escapeHtml(sec.body || '')}</textarea>
+                <button class="btn-small-danger" onclick="this.parentElement.remove()" style="margin-top:8px;">Remove</button>
+              `;
+              container.appendChild(div);
             });
 
-            showToast("✓ Content regenerated");
+            showToast('✓ Content regenerated');
           } catch (error) {
-            alert("Regenerate failed: " + error.message);
+            alert('Regenerate failed: ' + error.message);
           } finally {
             btn.disabled = false;
-            btn.innerHTML = "🔄 Regenerate";
+            btn.innerHTML = '🔄 Regenerate';
           }
         }
 

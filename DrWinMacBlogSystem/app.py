@@ -297,6 +297,7 @@ def api_expand():
         short_post = (data.get('short_post') or '').strip()
         mode = data.get('mode', 'smart')
         model = data.get('model', 'gpt-4o')
+        settings = data.get('settings') or {}
 
         if not short_post:
             return jsonify({'error': 'short_post is required'}), 400
@@ -307,14 +308,14 @@ def api_expand():
         allowed_models = {'gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo'}
         if model not in allowed_models:
             model = 'gpt-4o'
-        logger.info(f"Starting expansion in {mode} mode with model {model}")
+        logger.info(f"Starting expansion in {mode} mode with model {model} settings={settings}")
         
         # Run async expansion
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         
         try:
-            expanded = loop.run_until_complete(engine.expand_post(short_post, mode, model))
+            expanded = loop.run_until_complete(engine.expand_post(short_post, mode, model, settings))
             
             # Generate preview HTML (publisher may not be initialized in error cases)
             preview_html = publisher.generate_preview_html(expanded) if publisher else ""
@@ -329,6 +330,7 @@ def api_expand():
                 'lead': expanded['lead'],
                 'sections': expanded['sections'],
                 'teaser': expanded['teaser'],
+                'cta': expanded.get('cta', ''),
                 'date': expanded['date'],
                 'preview_html': preview_html,
                 'email_sent': False
@@ -474,6 +476,8 @@ def api_regenerate():
         sections = data.get('sections') or []
         teaser  = (data.get('teaser') or '').strip()
         model   = data.get('model', 'gpt-4o')
+        mode    = data.get('mode', 'smart')
+        settings = data.get('settings') or {}
 
         if not lead and not sections:
             return jsonify({'error': 'lead or sections required'}), 400
@@ -486,7 +490,7 @@ def api_regenerate():
         asyncio.set_event_loop(loop)
         try:
             refined = loop.run_until_complete(
-                engine.regenerate_content(title, lead, sections, teaser, model)
+                engine.regenerate_content(title, lead, sections, teaser, model, settings, mode)
             )
         finally:
             loop.close()
@@ -497,6 +501,7 @@ def api_regenerate():
             'lead':     refined['lead'],
             'sections': refined['sections'],
             'teaser':   refined['teaser'],
+            'cta':      refined.get('cta', ''),
         })
 
     except Exception as e:
