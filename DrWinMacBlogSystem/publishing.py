@@ -238,7 +238,7 @@ class BlogPublisher:
       <a href="/services.html">Services</a>
       <a href="/about.html">About</a>
       <a href="/ai-curriculum.html">AI Curriculum</a>
-      <a href="/blog/" class="active">Blog</a>
+      <a href="/blog/" class="active">Tech-splaining</a>
       <a class="js-book" href="https://tally.so/r/b5Z886" target="_blank" rel="noopener">Book Now</a>
       <a href="/#contact">Contact</a>
     </div>
@@ -493,7 +493,7 @@ class BlogPublisher:
     <section class="section blog-hero">
         <div class="container">
             <span class="kicker">Under the Radar Tech</span>
-            <h1 style="margin-top:16px;">The Blog</h1>
+            <h1 style="margin-top:16px;">Tech-splaining</h1>
             <p class="lead">
                 Quiet shifts in AI, automation, and infrastructure —
                 explained without the hype.
