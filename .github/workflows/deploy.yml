@@ -1,10 +1,8 @@
 name: Deploy to drwinmac.tech
-
 on:
   push:
     branches: [main]
   workflow_dispatch:
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -13,32 +11,37 @@ jobs:
         with:
           ref: main
           fetch-depth: 1
-
       - name: Show deployed commit
         run: git log -1 --oneline
-
       - name: Ensure assets/blog directory exists on server
         run: |
           sudo apt-get install -y lftp -q
           lftp -e "mkdir -p assets/blog; quit" \
             -u "${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }}" \
             ${{ secrets.FTP_HOST }} || true
-
-      - name: Deploy to Namecheap via FTP
+      - name: Deploy blog files to Namecheap via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           port: 21
-          local-dir: ./
-          server-dir: /
+          local-dir: ./blog/
+          server-dir: /blog/
           log-level: standard
           exclude: |
             **/.git*
             **/.git*/**
-            **/.vscode/**
-            **/node_modules/**
-            DrWinMacBlogSystem/**
-            Backup/**
-            **/.*
+      - name: Deploy blog assets to Namecheap via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: 21
+          local-dir: ./assets/blog/
+          server-dir: /assets/blog/
+          log-level: standard
+          exclude: |
+            **/.git*
+            **/.git*/**
