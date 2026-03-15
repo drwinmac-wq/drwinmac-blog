@@ -5,7 +5,7 @@
       "title": "A Journey Into OpenClaw: Rethinking the Future of Work",
       "lead": "I’ve spent nearly two weeks inside OpenClaw.\n\nThat wasn’t the plan. I originally intended to explore the framework for a few days, write about it, and move on. Instead, the deeper I went, the more layers appeared.\n\nMost of the early work was not glamorous. Setting up memory systems. Making sure agents actually completed the tasks they were assigned. Running diagnostics. Debugging multi-agent coordination. Watching workflows break and tracing the problem back through configuration files and logs.\n\nNone of that makes for exciting demos.\n\nBut if systems like this are going to matter in the real world, those foundations matter more than anything else.",
       "teaser": "Exploring OpenClaw reveals a shift in work dynamics, where guiding AI systems becomes the new frontier.",
-      "date": "2026-03-16",
+      "date": "2026-03-15",
       "seo": "An exploration of OpenClaw reveals the transformative potential of AI frameworks in reshaping work dynamics, emphasizing the role of human creativity in guiding these systems.",
       "sections": [
         {
