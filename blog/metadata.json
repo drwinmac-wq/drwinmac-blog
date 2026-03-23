@@ -1,6 +1,33 @@
 {
   "posts": [
     {
+      "slug": "whats-changing-beneath-the-iran-conflict",
+      "title": "What’s Changing Beneath the Iran Conflict",
+      "lead": "Something shifted in this conflict, and it is easy to miss if you are only looking at the surface.\n\nMost wars introduce new technology. Faster weapons. Better targeting. More range.\n\nThis one feels different.\n\nNot because of what is being used, but because of how decisions are being made.\n\nFor the first time, we are watching a conflict where artificial intelligence is actively compressing the time between seeing, deciding, and acting… while the situation itself is still unfolding.\n\nThis is not post-analysis.\nThis is midstream.",
+      "teaser": "Amidst visible chaos, AI is quietly transforming the nature of modern conflict, reshaping decision-making and battlefield dynamics.",
+      "date": "2026-03-23",
+      "seo": "Explore the subtle yet profound changes in warfare as AI reshapes decision-making, timing, and battlefield dynamics.",
+      "sections": [
+        {
+          "heading": "The Part Most People Aren't Watching",
+          "body": "The easiest place to see this is in the math.\n\nA $35,000 drone forces a defensive response that can cost millions. That gap is not just inefficient. It compounds.  ￼\n\nCheap systems are not trying to win outright. They are forcing expensive reactions, over and over, until the system behind them starts to strain.\n\nAt the same time, those drones are not operating blindly.\n\nAI systems are filtering satellite feeds, sensor data, and battlefield signals in seconds. What used to take hours or days now happens almost instantly.  ￼\n\nHumans are still involved. But they are no longer the ones searching for the signal.\n\nThey are reacting to what has already been surfaced."
+        },
+        {
+          "heading": "What's Actually Changing",
+          "body": "This is where the shift becomes clearer.\n\nAI is shortening what military planners call the “kill chain.” The process from identifying a target to acting on it.  ￼\n\nThat chain used to move at human speed.\n\nNow it moves at system speed.\n\nThousands of targets can be analyzed and acted on in compressed timeframes that were not previously possible.  ￼\n\nAt the same time, autonomy is creeping forward.\n\nDrones can navigate without signals. Swarms can coordinate without direct control. Systems can adapt in motion rather than follow fixed instructions.\n\nEven information itself has become a battlefield.\n\nAI-generated content, synthetic media, and coordinated digital campaigns are being deployed alongside physical systems to shape perception in real time.  ￼\n\nAnd underneath all of it, infrastructure is now exposed.\n\nData centers, networks, and compute are no longer background systems. They are becoming targets.  ￼\n\nThe “cloud” is no longer abstract when physical systems depend on it to function."
+        },
+        {
+          "heading": "Why This Actually Matters",
+          "body": "This is not just about better weapons.\n\nIt is about timing.\n\nWhen decisions start happening faster than humans can fully process them, control begins to shift.\n\nNot suddenly. Gradually.\n\nAt first, the system filters the data.\nThen it suggests the decision.\nThen it becomes difficult to disagree with the suggestion, because the system has already seen more than any individual could.\n\nThis is how the role changes.\n\nFrom decision-maker…\nto validator…\nto observer.\n\nAnd this is happening while the conflict is still evolving.\n\nNot after."
+        },
+        {
+          "heading": "Where This Quietly Leads",
+          "body": "It is too early to call this a fully autonomous war.\n\nHumans are still making final calls. That line is still being held, at least for now.  ￼\n\nBut the pressure on that line is increasing.\n\nFaster systems create expectations.\nFaster decisions create dependencies.\nDependencies are hard to reverse once they become normal.\n\nWhat this conflict is showing is not a finished state.\n\nIt is a direction.\n\nA world where intelligence is no longer just used to understand the battlefield…\n\nbut to shape it, continuously, while it is still unfolding.\n\nAnd once that becomes normal, the question is no longer whether AI is involved.\n\nIt becomes whether anything can happen without it."
+        }
+      ],
+      "image_path": "whats-changing-beneath-the-iran-conflict.png"
+    },
+    {
       "slug": "a-journey-into-openclaw-rethinking-the-future-of-work",
       "title": "A Journey Into OpenClaw: Rethinking the Future of Work",
       "lead": "I’ve spent nearly two weeks inside OpenClaw.\n\nThat wasn’t the plan. I originally intended to explore the framework for a few days, write about it, and move on. Instead, the deeper I went, the more layers appeared.\n\nMost of the early work was not glamorous. Setting up memory systems. Making sure agents actually completed the tasks they were assigned. Running diagnostics. Debugging multi-agent coordination. Watching workflows break and tracing the problem back through configuration files and logs.\n\nNone of that makes for exciting demos.\n\nBut if systems like this are going to matter in the real world, those foundations matter more than anything else.",
